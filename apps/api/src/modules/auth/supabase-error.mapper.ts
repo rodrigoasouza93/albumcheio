@@ -11,6 +11,10 @@ import {
 import { SupabaseApiError } from '../supabase/supabase-api.error.js';
 
 const getPublicMessage = (error: SupabaseApiError): string => {
+  if (error.code === '23505') {
+    return 'Resource already exists';
+  }
+
   if (error.statusCode === 401) {
     return 'Authentication failed';
   }
@@ -28,6 +32,14 @@ export const mapSupabaseError = (error: unknown): Error => {
   }
 
   const message = getPublicMessage(error);
+
+  if (error.code === '23505') {
+    return new ConflictException(message);
+  }
+
+  if (error.code === '23503') {
+    return new UnprocessableEntityException(message);
+  }
 
   if (error.statusCode === 400) {
     return new BadRequestException(message);

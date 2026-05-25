@@ -27,18 +27,27 @@ Implementar os endpoints e regras de domínio para criação, consulta e listage
 
 ## Subtarefas
 
-- [ ] 4.1 Criar `AlbumsModule` com endpoints de listagem, criação e detalhe.
-- [ ] 4.2 Criar suporte a seções de álbum com `kind`, código e ordenação.
-- [ ] 4.3 Criar `StickersModule` ou submódulo equivalente para cadastro e listagem de figurinhas.
-- [ ] 4.4 Implementar normalização e validação de códigos de figurinhas.
-- [ ] 4.5 Mapear conflito de código por álbum para status `409`.
-- [ ] 4.6 Implementar paginação `limit` e `offset` nas listagens.
-- [ ] 4.7 Garantir que endpoints de escrita exigem usuário autenticado.
-- [ ] 4.8 Retornar DTOs adequados para telas de lista e detalhe.
+- [x] 4.1 Criar `AlbumsModule` com endpoints de listagem, criação e detalhe.
+- [x] 4.2 Criar suporte a seções de álbum com `kind`, código e ordenação.
+- [x] 4.3 Criar `StickersModule` ou submódulo equivalente para cadastro e listagem de figurinhas.
+- [x] 4.4 Implementar normalização e validação de códigos de figurinhas.
+- [x] 4.5 Mapear conflito de código por álbum para status `409`.
+- [x] 4.6 Implementar paginação `limit` e `offset` nas listagens.
+- [x] 4.7 Garantir que endpoints de escrita exigem usuário autenticado.
+- [x] 4.8 Retornar DTOs adequados para telas de lista e detalhe.
 
 ## Detalhes de implementação
 
 Referenciar `techspec.md` nas seções "Modelos de dados", "Endpoints da API", "Principais interfaces" e "Considerações técnicas".
+
+### Notas de implementação
+
+- Criados `AlbumsModule` e `StickersModule` em `apps/api/src/modules`, registrados no `AppModule`.
+- Endpoints implementados sob `/api/v1/albums` e `/api/v1/albums/:albumId/stickers`, protegidos por `SupabaseAuthGuard`.
+- `controllers -> services -> data` preservado com repositories que encapsulam o client Supabase REST.
+- Códigos de seções e figurinhas são normalizados com `trim` e uppercase antes de inserção e filtro.
+- Erros PostgreSQL `23505` são mapeados para `409 Conflict`, cobrindo a constraint `unique(album_id, code)` de figurinhas e seções.
+- Listagens retornam `{ items, limit, offset }` para consumo previsível no frontend.
 
 ## Critérios de sucesso
 
@@ -49,14 +58,20 @@ Referenciar `techspec.md` nas seções "Modelos de dados", "Endpoints da API", "
 
 ## Testes da tarefa
 
-- [ ] Testes unitários: normalização de código, validações de DTOs e regras de conflito.
-- [ ] Testes de integração: criar álbum, seção, figurinha, consultar detalhe e listar figurinhas com filtros.
-- [ ] Testes E2E: não obrigatório nesta tarefa; fluxo completo será coberto na tarefa 9.
+- [x] Testes unitários: normalização de código, validações de DTOs e regras de conflito.
+- [x] Testes de integração: criar álbum, seção, figurinha, consultar detalhe e listar figurinhas com filtros.
+- [x] Testes E2E: não obrigatório nesta tarefa; fluxo completo será coberto na tarefa 9.
+
+### Verificação
+
+- `pnpm --filter @albumcheio/api test` - 14 arquivos, 41 testes passando.
+- `pnpm --filter @albumcheio/api build` - build NestJS concluído com sucesso.
 
 ## Arquivos relevantes
 
 - `tasks/prd-gestao-figurinhas-albuns/techspec.md`
-- `apps/api/src/albums/**`
-- `apps/api/src/stickers/**`
-- `apps/api/src/schemas/**`
-- `apps/api/test/**`
+- `apps/api/src/modules/albums/**`
+- `apps/api/src/modules/stickers/**`
+- `apps/api/src/modules/supabase/supabase-client.ts`
+- `apps/api/src/modules/supabase/supabase.types.ts`
+- `apps/api/src/modules/auth/supabase-error.mapper.ts`

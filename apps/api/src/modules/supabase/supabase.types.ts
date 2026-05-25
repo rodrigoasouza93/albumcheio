@@ -26,6 +26,40 @@ export interface SupabaseProfileRow {
   readonly updated_at: string;
 }
 
+export interface SupabaseAlbumRow {
+  readonly id: string;
+  readonly name: string;
+  readonly edition: string | null;
+  readonly description: string | null;
+  readonly created_by: string | null;
+  readonly status: string;
+  readonly created_at: string;
+  readonly updated_at: string;
+}
+
+export interface SupabaseAlbumSectionRow {
+  readonly id: string;
+  readonly album_id: string;
+  readonly name: string;
+  readonly code: string;
+  readonly kind: string;
+  readonly sort_order: number;
+  readonly created_at: string;
+  readonly updated_at: string;
+}
+
+export interface SupabaseStickerRow {
+  readonly id: string;
+  readonly album_id: string;
+  readonly section_id: string;
+  readonly code: string;
+  readonly number: number | null;
+  readonly title: string | null;
+  readonly sort_order: number;
+  readonly created_at: string;
+  readonly updated_at: string;
+}
+
 export interface SupabaseAuthUserPayload {
   readonly user: SupabaseUser;
 }
