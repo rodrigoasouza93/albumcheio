@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { SessionProvider } from '@web/features/auth/hooks/session-context';
@@ -77,6 +77,33 @@ describe('AlbumDetailPage', () => {
             }
           )
         )
+        .mockResolvedValueOnce(
+          new Response(
+            JSON.stringify({
+              items: [
+                {
+                  id: 'sticker-id',
+                  albumId: 'album-id',
+                  sectionId: 'section-id',
+                  code: 'BRA01',
+                  number: 1,
+                  title: 'Badge',
+                  sortOrder: 10,
+                  createdAt: '2026-01-01T00:00:00.000Z',
+                  updatedAt: '2026-01-01T00:00:00.000Z'
+                }
+              ],
+              limit: 100,
+              offset: 0
+            }),
+            {
+              status: 200,
+              headers: {
+                'content-type': 'application/json'
+              }
+            }
+          )
+        )
     );
 
     render(
@@ -89,6 +116,227 @@ describe('AlbumDetailPage', () => {
       await screen.findByRole('heading', { name: 'World Cup 2026' })
     ).toBeVisible();
     expect(screen.getByRole('heading', { name: 'Brazil' })).toBeVisible();
-    expect(screen.getByText('Code BRA · team')).toBeVisible();
+    expect(screen.getByText('BRA01')).toBeVisible();
+    expect(screen.getByText(/team/)).toBeVisible();
+  });
+
+  it('creates sections and stickers without reloading the page', async () => {
+    localStorage.setItem('albumcheio.session', JSON.stringify(storedSession));
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify(storedSession.user), {
+          status: 200,
+          headers: {
+            'content-type': 'application/json'
+          }
+        })
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            id: 'album-id',
+            name: 'World Cup 2026',
+            edition: 'Panini',
+            description: 'Main tournament album',
+            status: 'active',
+            createdBy: 'user-id',
+            createdAt: '2026-01-01T00:00:00.000Z',
+            updatedAt: '2026-01-01T00:00:00.000Z',
+            sections: []
+          }),
+          {
+            status: 200,
+            headers: {
+              'content-type': 'application/json'
+            }
+          }
+        )
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            items: [],
+            limit: 100,
+            offset: 0
+          }),
+          {
+            status: 200,
+            headers: {
+              'content-type': 'application/json'
+            }
+          }
+        )
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            id: 'section-id',
+            albumId: 'album-id',
+            name: 'Brazil',
+            code: 'BRA',
+            kind: 'team',
+            sortOrder: 10,
+            createdAt: '2026-01-01T00:00:00.000Z',
+            updatedAt: '2026-01-01T00:00:00.000Z'
+          }),
+          {
+            status: 201,
+            headers: {
+              'content-type': 'application/json'
+            }
+          }
+        )
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            id: 'sticker-id',
+            albumId: 'album-id',
+            sectionId: 'section-id',
+            code: 'BRA01',
+            number: 1,
+            title: 'Badge',
+            sortOrder: 10,
+            createdAt: '2026-01-01T00:00:00.000Z',
+            updatedAt: '2026-01-01T00:00:00.000Z'
+          }),
+          {
+            status: 201,
+            headers: {
+              'content-type': 'application/json'
+            }
+          }
+        )
+      );
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(
+      <SessionProvider>
+        <AlbumDetailPage albumId="album-id" />
+      </SessionProvider>
+    );
+
+    expect(
+      await screen.findByRole('heading', { name: 'World Cup 2026' })
+    ).toBeVisible();
+
+    fireEvent.change(screen.getByLabelText('Section name'), {
+      target: { value: 'Brazil' }
+    });
+    fireEvent.change(screen.getByLabelText('Section code'), {
+      target: { value: 'bra' }
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Create section' }));
+
+    expect(
+      await screen.findByRole('heading', { name: 'Brazil' })
+    ).toBeVisible();
+
+    fireEvent.change(screen.getByLabelText('Sticker code'), {
+      target: { value: 'bra01' }
+    });
+    fireEvent.change(screen.getByLabelText('Number'), {
+      target: { value: '1' }
+    });
+    fireEvent.change(screen.getByLabelText('Title'), {
+      target: { value: 'Badge' }
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Create sticker' }));
+
+    expect(await screen.findByText('BRA01')).toBeVisible();
+  });
+
+  it('shows a specific duplicate sticker code message', async () => {
+    localStorage.setItem('albumcheio.session', JSON.stringify(storedSession));
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockResolvedValueOnce(
+          new Response(JSON.stringify(storedSession.user), {
+            status: 200,
+            headers: {
+              'content-type': 'application/json'
+            }
+          })
+        )
+        .mockResolvedValueOnce(
+          new Response(
+            JSON.stringify({
+              id: 'album-id',
+              name: 'World Cup 2026',
+              edition: 'Panini',
+              description: 'Main tournament album',
+              status: 'active',
+              createdBy: 'user-id',
+              createdAt: '2026-01-01T00:00:00.000Z',
+              updatedAt: '2026-01-01T00:00:00.000Z',
+              sections: [
+                {
+                  id: 'section-id',
+                  albumId: 'album-id',
+                  name: 'Brazil',
+                  code: 'BRA',
+                  kind: 'team',
+                  sortOrder: 10,
+                  createdAt: '2026-01-01T00:00:00.000Z',
+                  updatedAt: '2026-01-01T00:00:00.000Z'
+                }
+              ]
+            }),
+            {
+              status: 200,
+              headers: {
+                'content-type': 'application/json'
+              }
+            }
+          )
+        )
+        .mockResolvedValueOnce(
+          new Response(
+            JSON.stringify({
+              items: [],
+              limit: 100,
+              offset: 0
+            }),
+            {
+              status: 200,
+              headers: {
+                'content-type': 'application/json'
+              }
+            }
+          )
+        )
+        .mockResolvedValueOnce(
+          new Response(JSON.stringify({ message: 'Resource already exists' }), {
+            status: 409,
+            headers: {
+              'content-type': 'application/json'
+            }
+          })
+        )
+    );
+
+    render(
+      <SessionProvider>
+        <AlbumDetailPage albumId="album-id" />
+      </SessionProvider>
+    );
+
+    expect(
+      await screen.findByRole('heading', { name: 'World Cup 2026' })
+    ).toBeVisible();
+
+    fireEvent.change(screen.getByLabelText('Sticker code'), {
+      target: { value: 'bra01' }
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Create sticker' }));
+
+    expect(
+      await screen.findByText(
+        'Sticker code BRA01 already exists in this album. Review the code or choose another one.'
+      )
+    ).toBeVisible();
   });
 });

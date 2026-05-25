@@ -6,8 +6,24 @@ import { useCallback, useEffect, useState } from 'react';
 import { AuthenticatedShell } from '@web/features/auth/components/authenticated-shell';
 import { ProtectedRoute } from '@web/features/auth/components/protected-route';
 import { useSession } from '@web/features/auth/hooks/session-context';
-import type { AlbumDetail } from '@web/lib/api/api-types';
-import { ApiError, getAlbumDetail } from '@web/lib/api/http-client';
+import type {
+  AlbumDetail,
+  AlbumSectionSummary,
+  CreateAlbumSectionInput,
+  CreateStickerInput,
+  StickerSummary
+} from '@web/lib/api/api-types';
+import {
+  ApiError,
+  createAlbumSection,
+  createSticker,
+  getAlbumDetail,
+  listStickers
+} from '@web/lib/api/http-client';
+
+import { CatalogSummary } from './catalog-summary';
+import { CreateSectionForm } from './create-section-form';
+import { CreateStickerForm } from './create-sticker-form';
 
 interface AlbumDetailPageProps {
   readonly albumId: string;
@@ -21,12 +37,55 @@ const getAlbumErrorMessage = (error: unknown): string => {
   return 'Unable to load the album. Please try again.';
 };
 
+const STICKER_PAGE_LIMIT = 100;
+
+const getNextSortOrder = (
+  items: readonly { readonly sortOrder: number }[]
+): number =>
+  items.length === 0
+    ? 10
+    : Math.max(...items.map((item) => item.sortOrder)) + 10;
+
+const listAllStickers = async (input: {
+  readonly albumId: string;
+  readonly offset?: number;
+  readonly token: string;
+}): Promise<readonly StickerSummary[]> => {
+  const offset = input.offset ?? 0;
+  const stickerPage = await listStickers({
+    token: input.token,
+    albumId: input.albumId,
+    limit: STICKER_PAGE_LIMIT,
+    offset
+  });
+
+  if (stickerPage.items.length < STICKER_PAGE_LIMIT) {
+    return stickerPage.items;
+  }
+
+  return [
+    ...stickerPage.items,
+    ...(await listAllStickers({
+      token: input.token,
+      albumId: input.albumId,
+      offset: offset + STICKER_PAGE_LIMIT
+    }))
+  ];
+};
+
 export function AlbumDetailPage({ albumId }: AlbumDetailPageProps) {
   const { clearSession, session } = useSession();
   const accessToken = session?.accessToken;
   const [album, setAlbum] = useState<AlbumDetail | null>(null);
+  const [stickers, setStickers] = useState<readonly StickerSummary[]>([]);
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>(
     'loading'
+  );
+  const [sectionStatus, setSectionStatus] = useState<'idle' | 'submitting'>(
+    'idle'
+  );
+  const [stickerStatus, setStickerStatus] = useState<'idle' | 'submitting'>(
+    'idle'
   );
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -39,12 +98,19 @@ export function AlbumDetailPage({ albumId }: AlbumDetailPageProps) {
     setErrorMessage('');
 
     try {
-      const albumDetail = await getAlbumDetail({
-        token: accessToken,
-        albumId
-      });
+      const [albumDetail, loadedStickers] = await Promise.all([
+        getAlbumDetail({
+          token: accessToken,
+          albumId
+        }),
+        listAllStickers({
+          token: accessToken,
+          albumId
+        })
+      ]);
 
       setAlbum(albumDetail);
+      setStickers(loadedStickers);
       setStatus('ready');
     } catch (error) {
       if (error instanceof ApiError && error.status === 401) {
@@ -60,6 +126,79 @@ export function AlbumDetailPage({ albumId }: AlbumDetailPageProps) {
   useEffect(() => {
     void Promise.resolve().then(loadAlbum);
   }, [loadAlbum]);
+
+  const handleCreateSection = async (
+    input: CreateAlbumSectionInput
+  ): Promise<AlbumSectionSummary> => {
+    if (!accessToken) {
+      throw new ApiError(401, 'Authentication is required.', []);
+    }
+
+    setSectionStatus('submitting');
+
+    try {
+      const section = await createAlbumSection({
+        token: accessToken,
+        albumId,
+        section: input
+      });
+
+      setAlbum((currentAlbum) =>
+        currentAlbum
+          ? {
+              ...currentAlbum,
+              sections: [...currentAlbum.sections, section].sort(
+                (first, second) => first.sortOrder - second.sortOrder
+              )
+            }
+          : currentAlbum
+      );
+
+      return section;
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 401) {
+        clearSession();
+      }
+
+      throw error;
+    } finally {
+      setSectionStatus('idle');
+    }
+  };
+
+  const handleCreateSticker = async (
+    input: CreateStickerInput
+  ): Promise<StickerSummary> => {
+    if (!accessToken) {
+      throw new ApiError(401, 'Authentication is required.', []);
+    }
+
+    setStickerStatus('submitting');
+
+    try {
+      const sticker = await createSticker({
+        token: accessToken,
+        albumId,
+        sticker: input
+      });
+
+      setStickers((currentStickers) =>
+        [...currentStickers, sticker].sort(
+          (first, second) => first.sortOrder - second.sortOrder
+        )
+      );
+
+      return sticker;
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 401) {
+        clearSession();
+      }
+
+      throw error;
+    } finally {
+      setStickerStatus('idle');
+    }
+  };
 
   return (
     <ProtectedRoute>
@@ -120,45 +259,24 @@ export function AlbumDetailPage({ albumId }: AlbumDetailPageProps) {
           ) : null}
 
           {status === 'ready' && album ? (
-            <div className="rounded-md border border-line bg-white shadow-sm">
-              <div className="border-b border-line px-5 py-4">
-                <h2 className="text-lg font-semibold">Sections</h2>
-                <p className="mt-1 text-sm text-slate-600">
-                  Registered groups available for this album.
-                </p>
+            <>
+              <div className="grid gap-6 lg:grid-cols-2">
+                <CreateSectionForm
+                  isDisabled={false}
+                  isSubmitting={sectionStatus === 'submitting'}
+                  nextSortOrder={getNextSortOrder(album.sections)}
+                  onCreateSection={handleCreateSection}
+                />
+                <CreateStickerForm
+                  isSubmitting={stickerStatus === 'submitting'}
+                  nextSortOrder={getNextSortOrder(stickers)}
+                  sections={album.sections}
+                  onCreateSticker={handleCreateSticker}
+                />
               </div>
 
-              {album.sections.length === 0 ? (
-                <div className="px-5 py-8">
-                  <h3 className="text-base font-semibold">
-                    No sections registered
-                  </h3>
-                  <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-                    Add sections through the API before stickers can be grouped
-                    in this album.
-                  </p>
-                </div>
-              ) : (
-                <div className="divide-y divide-line">
-                  {album.sections.map((section) => (
-                    <div
-                      key={section.id}
-                      className="flex flex-col gap-2 px-5 py-4 sm:flex-row sm:items-center sm:justify-between"
-                    >
-                      <div>
-                        <h3 className="font-semibold">{section.name}</h3>
-                        <p className="mt-1 text-sm text-slate-600">
-                          Code {section.code} · {section.kind}
-                        </p>
-                      </div>
-                      <span className="text-sm font-medium text-slate-600">
-                        Order {section.sortOrder}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+              <CatalogSummary sections={album.sections} stickers={stickers} />
+            </>
           ) : null}
         </section>
       </AuthenticatedShell>
