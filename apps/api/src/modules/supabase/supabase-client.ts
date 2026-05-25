@@ -4,6 +4,7 @@ import type {
   SupabaseAlbumSectionRow,
   SupabaseAuthPayload,
   SupabaseAuthUserPayload,
+  SupabaseCollectionItemRow,
   SupabaseProfileRow,
   SupabaseStickerRow
 } from './supabase.types.js';
@@ -31,6 +32,9 @@ const SECTION_SELECT =
   'id,album_id,name,code,kind,sort_order,created_at,updated_at';
 const STICKER_SELECT =
   'id,album_id,section_id,code,number,title,sort_order,created_at,updated_at';
+const COLLECTION_ITEM_SELECT =
+  'id,user_id,sticker_id,quantity_total,created_at,updated_at';
+const MAX_COLLECTION_STICKERS = 10000;
 
 export class SupabaseClient {
   private readonly baseUrl: string;
@@ -259,6 +263,111 @@ export class SupabaseClient {
     return this.request<readonly SupabaseStickerRow[]>({
       method: 'GET',
       path: `/rest/v1/stickers?${query.toString()}`
+    });
+  }
+
+  public async getSticker(stickerId: string): Promise<SupabaseStickerRow> {
+    const query = new URLSearchParams({
+      id: `eq.${stickerId}`,
+      select: STICKER_SELECT
+    });
+    const stickers = await this.request<readonly SupabaseStickerRow[]>({
+      method: 'GET',
+      path: `/rest/v1/stickers?${query.toString()}`
+    });
+
+    return this.requireSingleRow(stickers, 'Sticker not found');
+  }
+
+  public async findStickerByCode(input: {
+    readonly albumId: string;
+    readonly code: string;
+  }): Promise<SupabaseStickerRow | null> {
+    const stickers = await this.listStickers({
+      albumId: input.albumId,
+      code: input.code,
+      limit: 1,
+      offset: 0
+    });
+
+    return stickers.at(0) ?? null;
+  }
+
+  public async upsertCollectionItem(input: {
+    readonly userId: string;
+    readonly stickerId: string;
+    readonly quantityTotal: number;
+  }): Promise<SupabaseCollectionItemRow> {
+    const query = new URLSearchParams({
+      on_conflict: 'user_id,sticker_id'
+    });
+    const items = await this.request<readonly SupabaseCollectionItemRow[]>({
+      method: 'POST',
+      path: `/rest/v1/collection_items?${query.toString()}`,
+      body: {
+        user_id: input.userId,
+        sticker_id: input.stickerId,
+        quantity_total: input.quantityTotal
+      },
+      prefer: 'resolution=merge-duplicates,return=representation'
+    });
+
+    return this.requireSingleRow(items, 'Collection item not found');
+  }
+
+  public async getCollectionItem(input: {
+    readonly userId: string;
+    readonly stickerId: string;
+  }): Promise<SupabaseCollectionItemRow | null> {
+    const query = new URLSearchParams({
+      user_id: `eq.${input.userId}`,
+      sticker_id: `eq.${input.stickerId}`,
+      select: COLLECTION_ITEM_SELECT
+    });
+    const items = await this.request<readonly SupabaseCollectionItemRow[]>({
+      method: 'GET',
+      path: `/rest/v1/collection_items?${query.toString()}`
+    });
+
+    return items.at(0) ?? null;
+  }
+
+  public async listAlbumStickersForCollection(input: {
+    readonly albumId: string;
+    readonly sectionId?: string;
+  }): Promise<readonly SupabaseStickerRow[]> {
+    const query = new URLSearchParams({
+      album_id: `eq.${input.albumId}`,
+      select: STICKER_SELECT,
+      order: 'sort_order.asc,id.asc',
+      limit: String(MAX_COLLECTION_STICKERS),
+      offset: '0'
+    });
+
+    if (input.sectionId) {
+      query.set('section_id', `eq.${input.sectionId}`);
+    }
+
+    return this.request<readonly SupabaseStickerRow[]>({
+      method: 'GET',
+      path: `/rest/v1/stickers?${query.toString()}`
+    });
+  }
+
+  public async listAlbumCollectionItems(input: {
+    readonly userId: string;
+    readonly albumId: string;
+  }): Promise<readonly SupabaseCollectionItemRow[]> {
+    const query = new URLSearchParams({
+      user_id: `eq.${input.userId}`,
+      select: `${COLLECTION_ITEM_SELECT},stickers!inner(album_id)`,
+      'stickers.album_id': `eq.${input.albumId}`,
+      order: 'sticker_id.asc'
+    });
+
+    return this.request<readonly SupabaseCollectionItemRow[]>({
+      method: 'GET',
+      path: `/rest/v1/collection_items?${query.toString()}`
     });
   }
 
