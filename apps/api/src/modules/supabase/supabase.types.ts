@@ -60,6 +60,15 @@ export interface SupabaseStickerRow {
   readonly updated_at: string;
 }
 
+export interface SupabaseCollectionItemRow {
+  readonly id: string;
+  readonly user_id: string;
+  readonly sticker_id: string;
+  readonly quantity_total: number;
+  readonly created_at: string;
+  readonly updated_at: string;
+}
+
 export interface SupabaseAuthUserPayload {
   readonly user: SupabaseUser;
 }
