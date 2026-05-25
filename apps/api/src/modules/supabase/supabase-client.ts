@@ -1,8 +1,11 @@
 import { SupabaseApiError } from './supabase-api.error.js';
 import type {
+  SupabaseAlbumRow,
+  SupabaseAlbumSectionRow,
   SupabaseAuthPayload,
   SupabaseAuthUserPayload,
-  SupabaseProfileRow
+  SupabaseProfileRow,
+  SupabaseStickerRow
 } from './supabase.types.js';
 
 type HttpMethod = 'GET' | 'POST';
@@ -22,6 +25,12 @@ interface SupabaseClientOptions {
 }
 
 const JSON_CONTENT_TYPE = 'application/json';
+const ALBUM_SELECT =
+  'id,name,edition,description,created_by,status,created_at,updated_at';
+const SECTION_SELECT =
+  'id,album_id,name,code,kind,sort_order,created_at,updated_at';
+const STICKER_SELECT =
+  'id,album_id,section_id,code,number,title,sort_order,created_at,updated_at';
 
 export class SupabaseClient {
   private readonly baseUrl: string;
@@ -110,6 +119,149 @@ export class SupabaseClient {
     return this.requireSingleProfile(profiles);
   }
 
+  public async insertAlbum(input: {
+    readonly name: string;
+    readonly edition: string | null;
+    readonly description: string | null;
+    readonly createdBy: string;
+  }): Promise<SupabaseAlbumRow> {
+    const albums = await this.request<readonly SupabaseAlbumRow[]>({
+      method: 'POST',
+      path: '/rest/v1/albums',
+      body: {
+        name: input.name,
+        edition: input.edition,
+        description: input.description,
+        created_by: input.createdBy
+      },
+      prefer: 'return=representation'
+    });
+
+    return this.requireSingleRow(albums, 'Album not found');
+  }
+
+  public async listAlbums(input: {
+    readonly limit: number;
+    readonly offset: number;
+  }): Promise<readonly SupabaseAlbumRow[]> {
+    const query = new URLSearchParams({
+      select: ALBUM_SELECT,
+      order: 'created_at.desc,id.asc',
+      limit: String(input.limit),
+      offset: String(input.offset)
+    });
+
+    return this.request<readonly SupabaseAlbumRow[]>({
+      method: 'GET',
+      path: `/rest/v1/albums?${query.toString()}`
+    });
+  }
+
+  public async getAlbum(albumId: string): Promise<SupabaseAlbumRow> {
+    const query = new URLSearchParams({
+      id: `eq.${albumId}`,
+      select: ALBUM_SELECT
+    });
+    const albums = await this.request<readonly SupabaseAlbumRow[]>({
+      method: 'GET',
+      path: `/rest/v1/albums?${query.toString()}`
+    });
+
+    return this.requireSingleRow(albums, 'Album not found');
+  }
+
+  public async insertAlbumSection(input: {
+    readonly albumId: string;
+    readonly name: string;
+    readonly code: string;
+    readonly kind: string;
+    readonly sortOrder: number;
+  }): Promise<SupabaseAlbumSectionRow> {
+    const sections = await this.request<readonly SupabaseAlbumSectionRow[]>({
+      method: 'POST',
+      path: '/rest/v1/album_sections',
+      body: {
+        album_id: input.albumId,
+        name: input.name,
+        code: input.code,
+        kind: input.kind,
+        sort_order: input.sortOrder
+      },
+      prefer: 'return=representation'
+    });
+
+    return this.requireSingleRow(sections, 'Album section not found');
+  }
+
+  public async listAlbumSections(
+    albumId: string
+  ): Promise<readonly SupabaseAlbumSectionRow[]> {
+    const query = new URLSearchParams({
+      album_id: `eq.${albumId}`,
+      select: SECTION_SELECT,
+      order: 'sort_order.asc,id.asc'
+    });
+
+    return this.request<readonly SupabaseAlbumSectionRow[]>({
+      method: 'GET',
+      path: `/rest/v1/album_sections?${query.toString()}`
+    });
+  }
+
+  public async insertSticker(input: {
+    readonly albumId: string;
+    readonly sectionId: string;
+    readonly code: string;
+    readonly number: number | null;
+    readonly title: string | null;
+    readonly sortOrder: number;
+  }): Promise<SupabaseStickerRow> {
+    const stickers = await this.request<readonly SupabaseStickerRow[]>({
+      method: 'POST',
+      path: '/rest/v1/stickers',
+      body: {
+        album_id: input.albumId,
+        section_id: input.sectionId,
+        code: input.code,
+        number: input.number,
+        title: input.title,
+        sort_order: input.sortOrder
+      },
+      prefer: 'return=representation'
+    });
+
+    return this.requireSingleRow(stickers, 'Sticker not found');
+  }
+
+  public async listStickers(input: {
+    readonly albumId: string;
+    readonly sectionId?: string;
+    readonly code?: string;
+    readonly limit: number;
+    readonly offset: number;
+  }): Promise<readonly SupabaseStickerRow[]> {
+    const query = new URLSearchParams({
+      album_id: `eq.${input.albumId}`,
+      select: STICKER_SELECT,
+      order: 'sort_order.asc,id.asc',
+      limit: String(input.limit),
+      offset: String(input.offset)
+    });
+
+    if (input.sectionId) {
+      query.set('section_id', `eq.${input.sectionId}`);
+    }
+
+    if (input.code) {
+      query.set('code', `eq.${input.code}`);
+    }
+
+    return this.request<readonly SupabaseStickerRow[]>({
+      method: 'GET',
+      path: `/rest/v1/stickers?${query.toString()}`
+    });
+  }
+
   private requireSingleProfile(
     profiles: readonly SupabaseProfileRow[]
   ): SupabaseProfileRow {
@@ -120,6 +272,19 @@ export class SupabaseClient {
     }
 
     return profile;
+  }
+
+  private requireSingleRow<Row>(
+    rows: readonly Row[],
+    notFoundMessage: string
+  ): Row {
+    const row = rows.at(0);
+
+    if (!row) {
+      throw new SupabaseApiError(404, notFoundMessage);
+    }
+
+    return row;
   }
 
   private async request<T>(options: SupabaseRequestOptions): Promise<T> {
