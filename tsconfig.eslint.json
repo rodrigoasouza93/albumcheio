@@ -1,0 +1,21 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "noEmit": true
+  },
+  "include": [
+    "apps/**/*.ts",
+    "apps/**/*.tsx",
+    "packages/**/*.ts",
+    "playwright.config.ts",
+    "tests/**/*.ts"
+  ],
+  "exclude": [
+    "**/.next/**",
+    "**/dist/**",
+    "**/node_modules/**",
+    "**/playwright-report/**",
+    "**/test-results/**"
+  ]
+}
