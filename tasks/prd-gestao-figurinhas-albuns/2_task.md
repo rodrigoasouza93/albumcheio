@@ -11,7 +11,7 @@ Criar a camada de persistência do catálogo compartilhado e das coleções priv
 - `.agents/skills/nodejs-typescript-conventions`: manter scripts e utilitários em TypeScript quando houver código auxiliar.
 - `.agents/skills/vitest-testing`: cobrir constraints e isolamento de dados com testes de integração.
 - `.agents/skills/code-standards-en`: manter nomes técnicos consistentes em inglês.
-</skills>
+  </skills>
 
 <requirements>
 
@@ -21,18 +21,18 @@ Criar a camada de persistência do catálogo compartilhado e das coleções priv
 - Garantir isolamento de dados privados por usuário via RLS.
 - Criar índices necessários para busca por código, progresso, faltantes e repetidas.
 - Criar seed mínimo para testes sem depender de checklist externo.
-</requirements>
+  </requirements>
 
 ## Subtarefas
 
-- [ ] 2.1 Criar migrations SQL versionadas para o modelo de dados.
-- [ ] 2.2 Adicionar constraints de unicidade, integridade referencial e quantidade não negativa.
-- [ ] 2.3 Criar índices para álbum, seção, código e itens de coleção por usuário.
-- [ ] 2.4 Configurar RLS para `profiles` e `collection_items`.
-- [ ] 2.5 Configurar políticas de leitura e escrita do catálogo para usuários autenticados no MVP.
-- [ ] 2.6 Criar seed mínimo com álbum, seções e figurinhas de exemplo.
-- [ ] 2.7 Adicionar documentação de execução de migrations e reset local.
-- [ ] 2.8 Validar que dados de um usuário não aparecem para outro usuário.
+- [x] 2.1 Criar migrations SQL versionadas para o modelo de dados.
+- [x] 2.2 Adicionar constraints de unicidade, integridade referencial e quantidade não negativa.
+- [x] 2.3 Criar índices para álbum, seção, código e itens de coleção por usuário.
+- [x] 2.4 Configurar RLS para `profiles` e `collection_items`.
+- [x] 2.5 Configurar políticas de leitura e escrita do catálogo para usuários autenticados no MVP.
+- [x] 2.6 Criar seed mínimo com álbum, seções e figurinhas de exemplo.
+- [x] 2.7 Adicionar documentação de execução de migrations e reset local.
+- [x] 2.8 Validar que dados de um usuário não aparecem para outro usuário.
 
 ## Detalhes de implementação
 
@@ -47,9 +47,9 @@ Referenciar `techspec.md` nas seções "Modelos de dados", "Pontos de integraç�
 
 ## Testes da tarefa
 
-- [ ] Testes unitários: validação de helpers de normalização ou montagem de fixtures, se existirem.
-- [ ] Testes de integração: migrations, constraints, índices esperados e políticas RLS multiusuário.
-- [ ] Testes E2E: não aplicável nesta tarefa.
+- [x] Testes unitários: validação de helpers de normalização ou montagem de fixtures, se existirem.
+- [x] Testes de integração: migrations, constraints, índices esperados e políticas RLS multiusuário.
+- [x] Testes E2E: não aplicável nesta tarefa.
 
 ## Arquivos relevantes
 
