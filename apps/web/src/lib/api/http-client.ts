@@ -1,7 +1,14 @@
 import type {
   AlbumDetail,
   AlbumPage,
+  AlbumSectionSummary,
+  AlbumSummary,
   AuthSession,
+  CreateAlbumInput,
+  CreateAlbumSectionInput,
+  CreateStickerInput,
+  StickerPage,
+  StickerSummary,
   UserProfile
 } from './api-types';
 
@@ -179,4 +186,50 @@ export const getAlbumDetail = (input: {
 }): Promise<AlbumDetail> =>
   requestApi<AlbumDetail>(`/albums/${input.albumId}`, {
     token: input.token
+  });
+
+export const createAlbum = (input: {
+  readonly token: string;
+  readonly album: CreateAlbumInput;
+}): Promise<AlbumSummary> =>
+  requestApi<AlbumSummary>('/albums', {
+    method: 'POST',
+    token: input.token,
+    body: input.album
+  });
+
+export const createAlbumSection = (input: {
+  readonly token: string;
+  readonly albumId: string;
+  readonly section: CreateAlbumSectionInput;
+}): Promise<AlbumSectionSummary> =>
+  requestApi<AlbumSectionSummary>(`/albums/${input.albumId}/sections`, {
+    method: 'POST',
+    token: input.token,
+    body: input.section
+  });
+
+export const listStickers = (input: {
+  readonly token: string;
+  readonly albumId: string;
+  readonly limit: number;
+  readonly offset: number;
+}): Promise<StickerPage> =>
+  requestApi<StickerPage>(`/albums/${input.albumId}/stickers`, {
+    token: input.token,
+    query: {
+      limit: input.limit,
+      offset: input.offset
+    }
+  });
+
+export const createSticker = (input: {
+  readonly token: string;
+  readonly albumId: string;
+  readonly sticker: CreateStickerInput;
+}): Promise<StickerSummary> =>
+  requestApi<StickerSummary>(`/albums/${input.albumId}/stickers`, {
+    method: 'POST',
+    token: input.token,
+    body: input.sticker
   });

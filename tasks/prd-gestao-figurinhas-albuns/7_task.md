@@ -29,14 +29,14 @@ Criar as telas e componentes para cadastro manual do catálogo, permitindo que u
 
 ## Subtarefas
 
-- [ ] 7.1 Criar formulário de criação de álbum.
-- [ ] 7.2 Criar formulário de criação de seção no detalhe do álbum.
-- [ ] 7.3 Criar formulário de criação de figurinha vinculada à seção.
-- [ ] 7.4 Criar listagem resumida de seções e figurinhas já cadastradas.
-- [ ] 7.5 Tratar erro `409` de código duplicado com feedback específico.
-- [ ] 7.6 Atualizar cache/estado local após criação sem exigir recarregamento manual.
-- [ ] 7.7 Garantir navegação por teclado e labels em todos os campos.
-- [ ] 7.8 Validar layout mobile para cadastro e leitura de códigos.
+- [x] 7.1 Criar formulário de criação de álbum.
+- [x] 7.2 Criar formulário de criação de seção no detalhe do álbum.
+- [x] 7.3 Criar formulário de criação de figurinha vinculada à seção.
+- [x] 7.4 Criar listagem resumida de seções e figurinhas já cadastradas.
+- [x] 7.5 Tratar erro `409` de código duplicado com feedback específico.
+- [x] 7.6 Atualizar cache/estado local após criação sem exigir recarregamento manual.
+- [x] 7.7 Garantir navegação por teclado e labels em todos os campos.
+- [x] 7.8 Validar layout mobile para cadastro e leitura de códigos.
 
 ## Detalhes de implementação
 
@@ -51,9 +51,23 @@ Referenciar `techspec.md` nas seções "features/albums", "Endpoints da API", "S
 
 ## Testes da tarefa
 
-- [ ] Testes unitários: formulários, validação de campos, estados de erro e componentes de lista.
-- [ ] Testes de integração: criação de álbum, seção e figurinha com cliente HTTP mockado ou ambiente de teste.
+- [x] Testes unitários: formulários, validação de campos, estados de erro e componentes de lista.
+- [x] Testes de integração: criação de álbum, seção e figurinha com cliente HTTP mockado ou ambiente de teste.
 - [ ] Testes E2E: fluxo completo de criação de catálogo será coberto na tarefa 9.
+
+## Notas de implementação
+
+- Adicionado formulário de criação de álbum em `/albums` com atualização local da listagem após `POST /albums`.
+- Adicionados formulários de seção e figurinha no detalhe do álbum, usando `POST /albums/:albumId/sections` e `POST /albums/:albumId/stickers`.
+- Adicionada listagem resumida do catálogo por seção, com códigos de figurinha em fonte monoespaçada para revisão visual.
+- O erro `409` ao criar figurinha mostra mensagem específica com o código normalizado.
+- Campos usam labels nativos, controles com foco visível e layout responsivo em grid que empilha no mobile.
+
+## Verificação
+
+- `pnpm --filter @albumcheio/web test`
+- `pnpm run lint`
+- `pnpm --filter @albumcheio/web build` (primeira execução bloqueada pelo sandbox do Turbopack ao criar processo/bindar porta; reexecutado com permissão elevada e aprovado)
 
 ## Arquivos relevantes
 

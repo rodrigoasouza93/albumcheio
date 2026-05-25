@@ -7,7 +7,9 @@ import { AuthenticatedShell } from '@web/features/auth/components/authenticated-
 import { ProtectedRoute } from '@web/features/auth/components/protected-route';
 import { useSession } from '@web/features/auth/hooks/session-context';
 import type { AlbumSummary } from '@web/lib/api/api-types';
-import { ApiError, listAlbums } from '@web/lib/api/http-client';
+import { ApiError, createAlbum, listAlbums } from '@web/lib/api/http-client';
+
+import { CreateAlbumForm } from './create-album-form';
 
 const ALBUM_PAGE_LIMIT = 50;
 
@@ -26,6 +28,7 @@ export function AlbumsPage() {
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>(
     'loading'
   );
+  const [isCreatingAlbum, setIsCreatingAlbum] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
   const loadAlbums = useCallback(async () => {
@@ -59,6 +62,38 @@ export function AlbumsPage() {
   useEffect(() => {
     void Promise.resolve().then(loadAlbums);
   }, [loadAlbums]);
+
+  const handleCreateAlbum = async (input: {
+    readonly name: string;
+    readonly edition: string | null;
+    readonly description: string | null;
+  }): Promise<AlbumSummary> => {
+    if (!accessToken) {
+      throw new ApiError(401, 'Authentication is required.', []);
+    }
+
+    setIsCreatingAlbum(true);
+
+    try {
+      const album = await createAlbum({
+        token: accessToken,
+        album: input
+      });
+
+      setAlbums((currentAlbums) => [album, ...currentAlbums]);
+      setStatus('ready');
+
+      return album;
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 401) {
+        clearSession();
+      }
+
+      throw error;
+    } finally {
+      setIsCreatingAlbum(false);
+    }
+  };
 
   return (
     <ProtectedRoute>
@@ -99,6 +134,13 @@ export function AlbumsPage() {
               <p className="font-semibold">Albums could not be loaded</p>
               <p className="mt-1">{errorMessage}</p>
             </div>
+          ) : null}
+
+          {status !== 'loading' ? (
+            <CreateAlbumForm
+              isSubmitting={isCreatingAlbum}
+              onCreateAlbum={handleCreateAlbum}
+            />
           ) : null}
 
           {status === 'ready' && albums.length === 0 ? (

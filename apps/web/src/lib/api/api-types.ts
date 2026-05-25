@@ -47,3 +47,42 @@ export interface AlbumPage {
   readonly limit: number;
   readonly offset: number;
 }
+
+export interface CreateAlbumInput {
+  readonly name: string;
+  readonly edition: string | null;
+  readonly description: string | null;
+}
+
+export interface CreateAlbumSectionInput {
+  readonly name: string;
+  readonly code: string;
+  readonly kind: AlbumSectionSummary['kind'];
+  readonly sortOrder: number;
+}
+
+export interface StickerSummary {
+  readonly id: string;
+  readonly albumId: string;
+  readonly sectionId: string;
+  readonly code: string;
+  readonly number: number | null;
+  readonly title: string | null;
+  readonly sortOrder: number;
+  readonly createdAt: string;
+  readonly updatedAt: string;
+}
+
+export interface StickerPage {
+  readonly items: readonly StickerSummary[];
+  readonly limit: number;
+  readonly offset: number;
+}
+
+export interface CreateStickerInput {
+  readonly sectionId: string;
+  readonly code: string;
+  readonly number: number | null;
+  readonly title: string | null;
+  readonly sortOrder: number;
+}
