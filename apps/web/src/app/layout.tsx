@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
 
+import { SessionProvider } from '@web/features/auth/hooks/session-context';
+
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -14,7 +16,9 @@ interface RootLayoutProps {
 export default function RootLayout({ children }: RootLayoutProps) {
   return (
     <html lang="en">
-      <body className="font-sans">{children}</body>
+      <body className="font-sans">
+        <SessionProvider>{children}</SessionProvider>
+      </body>
     </html>
   );
 }
