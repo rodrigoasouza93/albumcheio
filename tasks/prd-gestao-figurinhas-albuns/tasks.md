@@ -2,9 +2,9 @@
 
 ## Tarefas
 
-- [ ] 1.0 Estruturar monorepo, tooling e configuração base
-- [ ] 2.0 Criar schema Supabase, migrations, constraints, RLS e seeds
-- [ ] 3.0 Implementar autenticação, perfis e proteção da API
+- [x] 1.0 Estruturar monorepo, tooling e configuração base
+- [x] 2.0 Criar schema Supabase, migrations, constraints, RLS e seeds
+- [x] 3.0 Implementar autenticação, perfis e proteção da API
 - [ ] 4.0 Implementar API de catálogo de álbuns, seções e figurinhas
 - [ ] 5.0 Implementar API de coleção, busca por código, progresso, faltantes e repetidas
 - [ ] 6.0 Implementar frontend autenticado e navegação principal de álbuns
