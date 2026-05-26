@@ -9,7 +9,7 @@ const DEFAULT_API_PORT = 3001;
 loadApiEnv();
 
 const getApiPort = (): number => {
-  const parsedPort = Number(process.env.API_PORT);
+  const parsedPort = Number(process.env.PORT ?? process.env.API_PORT);
 
   if (Number.isInteger(parsedPort) && parsedPort > 0) {
     return parsedPort;

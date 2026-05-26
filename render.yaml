@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: albumcheio-api
+    runtime: node
+    plan: free
+    rootDir: .
+    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm run build:api
+    startCommand: pnpm --filter @albumcheio/api start
+    healthCheckPath: /api/v1/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: WEB_ORIGIN
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SUPABASE_DB_URL
+        sync: false
