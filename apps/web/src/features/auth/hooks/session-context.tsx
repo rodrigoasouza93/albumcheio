@@ -17,8 +17,10 @@ import {
 } from '@web/lib/api/http-client';
 
 import {
+  clearAuthRedirectHash,
   clearStoredSession,
   mapAuthSession,
+  readAuthRedirectSession,
   readStoredSession,
   saveStoredSession
 } from '../session-storage';
@@ -53,12 +55,8 @@ interface SessionProviderProps {
 }
 
 export function SessionProvider({ children }: SessionProviderProps) {
-  const [session, setSession] = useState<StoredSession | null>(() =>
-    readStoredSession()
-  );
-  const [status, setStatus] = useState<SessionStatus>(() =>
-    readStoredSession() ? 'loading' : 'unauthenticated'
-  );
+  const [session, setSession] = useState<StoredSession | null>(null);
+  const [status, setStatus] = useState<SessionStatus>('loading');
 
   const clearSession = useCallback(() => {
     clearStoredSession();
@@ -68,21 +66,26 @@ export function SessionProvider({ children }: SessionProviderProps) {
 
   useEffect(() => {
     const storedSession = readStoredSession();
+    const redirectSession = readAuthRedirectSession();
 
-    if (!storedSession) {
+    const activeSession = storedSession ?? redirectSession;
+
+    if (!activeSession) {
+      void Promise.resolve().then(() => setStatus('unauthenticated'));
       return;
     }
 
-    getAuthenticatedProfile(storedSession.accessToken)
+    getAuthenticatedProfile(activeSession.accessToken)
       .then((user) => {
         const refreshedSession = {
-          ...storedSession,
+          ...activeSession,
           user
         };
 
         saveStoredSession(refreshedSession);
         setSession(refreshedSession);
         setStatus('authenticated');
+        clearAuthRedirectHash();
       })
       .catch(() => {
         clearSession();

@@ -81,7 +81,10 @@ describe('auth endpoints', () => {
     userClient.getAuthenticatedUser.mockResolvedValue({
       user: {
         id: 'user-id',
-        email: 'user@example.com'
+        email: 'user@example.com',
+        user_metadata: {
+          name: 'Rodrigo'
+        }
       }
     });
     userClient.signOut.mockResolvedValue(undefined);
@@ -132,6 +135,7 @@ describe('auth endpoints', () => {
       user: {
         id: 'user-id',
         email: 'user@example.com',
+        name: 'Rodrigo',
         accessToken: 'access-token'
       }
     });
@@ -147,6 +151,7 @@ describe('auth endpoints', () => {
       user: {
         id: 'user-id',
         email: 'user@example.com',
+        name: 'Rodrigo',
         accessToken: 'access-token'
       }
     });

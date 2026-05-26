@@ -1,6 +1,10 @@
 export interface SupabaseUser {
   readonly id: string;
   readonly email?: string;
+  readonly user_metadata?: {
+    readonly name?: string;
+    readonly email?: string;
+  };
 }
 
 export interface SupabaseAuthSession {

@@ -86,3 +86,71 @@ export interface CreateStickerInput {
   readonly title: string | null;
   readonly sortOrder: number;
 }
+
+export type CollectionSearchStatus =
+  | 'not_found'
+  | 'missing'
+  | 'owned'
+  | 'duplicate';
+
+export interface CollectionItemSummary {
+  readonly id: string;
+  readonly userId: string;
+  readonly stickerId: string;
+  readonly quantityTotal: number;
+  readonly owned: boolean;
+  readonly duplicateCount: number;
+  readonly createdAt: string;
+  readonly updatedAt: string;
+}
+
+export interface StickerCollectionStatus {
+  readonly albumId: string;
+  readonly code: string;
+  readonly status: CollectionSearchStatus;
+  readonly sticker: StickerSummary | null;
+  readonly quantityTotal: number;
+  readonly owned: boolean;
+  readonly duplicateCount: number;
+}
+
+export interface SectionProgress {
+  readonly sectionId: string;
+  readonly sectionCode: string;
+  readonly sectionName: string;
+  readonly total: number;
+  readonly owned: number;
+  readonly missing: number;
+  readonly percentage: number;
+}
+
+export interface AlbumProgress {
+  readonly albumId: string;
+  readonly total: number;
+  readonly owned: number;
+  readonly missing: number;
+  readonly percentage: number;
+  readonly sections: readonly SectionProgress[];
+}
+
+export interface MissingStickerSummary extends StickerSummary {
+  readonly quantityTotal: number;
+  readonly owned: false;
+}
+
+export interface DuplicateStickerSummary extends StickerSummary {
+  readonly quantityTotal: number;
+  readonly duplicateCount: number;
+}
+
+export interface MissingStickerPage {
+  readonly items: readonly MissingStickerSummary[];
+  readonly limit: number;
+  readonly offset: number;
+}
+
+export interface DuplicateStickerPage {
+  readonly items: readonly DuplicateStickerSummary[];
+  readonly limit: number;
+  readonly offset: number;
+}

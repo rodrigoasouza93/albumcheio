@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 
 import { SupabaseService } from '../supabase/supabase.service.js';
 import type { SupabaseProfileRow } from '../supabase/supabase.types.js';
@@ -45,6 +45,20 @@ export class ProfilesService {
       return this.mapProfile(profile);
     } catch (error) {
       throw mapSupabaseError(error);
+    }
+  }
+
+  public async getOrCreateProfile(
+    input: CreateProfileInput
+  ): Promise<UserProfile> {
+    try {
+      return await this.getProfile(input);
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        return this.createProfile(input);
+      }
+
+      throw error;
     }
   }
 

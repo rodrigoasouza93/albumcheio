@@ -28,7 +28,10 @@ describe('SupabaseAuthGuard', () => {
       getAuthenticatedUser: vi.fn().mockResolvedValue({
         user: {
           id: 'user-id',
-          email: 'user@example.com'
+          email: 'user@example.com',
+          user_metadata: {
+            name: 'Rodrigo Souza'
+          }
         }
       })
     } as unknown as SupabaseClient;
@@ -47,6 +50,7 @@ describe('SupabaseAuthGuard', () => {
       user: {
         id: 'user-id',
         email: 'user@example.com',
+        name: 'Rodrigo Souza',
         accessToken: 'user-token'
       }
     });

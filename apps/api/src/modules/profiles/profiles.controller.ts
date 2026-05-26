@@ -20,8 +20,10 @@ export class ProfilesController {
   public async getAuthenticatedProfile(
     @Req() request: AuthenticatedRequest
   ): Promise<UserProfile> {
-    const profile = await this.profilesService.getProfile({
+    const profile = await this.profilesService.getOrCreateProfile({
       userId: request.user.id,
+      name:
+        request.user.name ?? request.user.email?.split('@')[0] ?? 'Collector',
       accessToken: request.user.accessToken
     });
 

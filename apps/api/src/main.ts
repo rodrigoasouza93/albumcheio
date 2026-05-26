@@ -1,9 +1,12 @@
 import { NestFactory } from '@nestjs/core';
 import 'reflect-metadata';
 
+import { loadApiEnv } from './config/env-loader.js';
 import { AppModule } from './modules/app.module.js';
 
 const DEFAULT_API_PORT = 3001;
+
+loadApiEnv();
 
 const getApiPort = (): number => {
   const parsedPort = Number(process.env.API_PORT);

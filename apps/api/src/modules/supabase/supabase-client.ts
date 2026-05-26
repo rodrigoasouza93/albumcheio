@@ -87,10 +87,12 @@ export class SupabaseClient {
   }
 
   public async getAuthenticatedUser(): Promise<SupabaseAuthUserPayload> {
-    return this.request<SupabaseAuthUserPayload>({
+    const payload = await this.request<unknown>({
       method: 'GET',
       path: '/auth/v1/user'
     });
+
+    return this.normalizeAuthenticatedUser(payload);
   }
 
   public async insertProfile(input: {
@@ -394,6 +396,37 @@ export class SupabaseClient {
     }
 
     return row;
+  }
+
+  private normalizeAuthenticatedUser(payload: unknown): SupabaseAuthUserPayload {
+    if (
+      payload &&
+      typeof payload === 'object' &&
+      'user' in payload &&
+      this.isSupabaseUser(payload.user)
+    ) {
+      return {
+        user: payload.user
+      };
+    }
+
+    if (this.isSupabaseUser(payload)) {
+      return {
+        user: payload
+      };
+    }
+
+    throw new SupabaseApiError(502, 'Supabase did not return a user');
+  }
+
+  private isSupabaseUser(
+    value: unknown
+  ): value is SupabaseAuthUserPayload['user'] {
+    return (
+      Boolean(value) &&
+      typeof value === 'object' &&
+      typeof (value as Record<string, unknown>).id === 'string'
+    );
   }
 
   private async request<T>(options: SupabaseRequestOptions): Promise<T> {

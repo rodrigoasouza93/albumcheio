@@ -116,4 +116,38 @@ describe('AuthService', () => {
       })
     ).rejects.toThrow(UnauthorizedException);
   });
+
+  it('creates a missing profile on login after email confirmation', async () => {
+    const authClient = {
+      signInWithPassword: vi.fn().mockResolvedValue({
+        ...sessionPayload,
+        user: {
+          ...sessionPayload.user,
+          user_metadata: {
+            name: 'Rodrigo Souza'
+          }
+        }
+      })
+    } as unknown as SupabaseClient;
+    const getOrCreateProfile = vi.fn().mockResolvedValue(profile);
+    const service = new AuthService(
+      {
+        createAuthClient: vi.fn().mockReturnValue(authClient)
+      } as unknown as SupabaseService,
+      {
+        getOrCreateProfile
+      } as unknown as ProfilesService
+    );
+
+    await service.login({
+      email: 'user@example.com',
+      password: '12345678'
+    });
+
+    expect(getOrCreateProfile).toHaveBeenCalledWith({
+      userId: 'user-id',
+      name: 'Rodrigo Souza',
+      accessToken: 'access-token'
+    });
+  });
 });

@@ -31,6 +31,7 @@ const authResponse = {
 describe('AuthForm', () => {
   afterEach(() => {
     localStorage.clear();
+    window.history.replaceState(null, '', '/');
     replaceMock.mockClear();
     vi.restoreAllMocks();
   });
@@ -87,5 +88,46 @@ describe('AuthForm', () => {
     expect(localStorage.getItem('albumcheio.session')).toContain(
       'access-token'
     );
+  });
+
+  it('stores the Supabase redirect session after email confirmation', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            id: 'user-id',
+            name: 'Ada Lovelace',
+            email: 'ada@example.com',
+            createdAt: '2026-01-01T00:00:00.000Z',
+            updatedAt: '2026-01-01T00:00:00.000Z'
+          }),
+          {
+            status: 200,
+            headers: {
+              'content-type': 'application/json'
+            }
+          }
+        )
+      )
+    );
+    window.history.pushState(
+      null,
+      '',
+      '/#access_token=redirect-access&refresh_token=redirect-refresh&expires_in=3600&token_type=bearer&type=signup'
+    );
+
+    render(
+      <SessionProvider>
+        <AuthForm />
+      </SessionProvider>
+    );
+
+    await waitFor(() =>
+      expect(localStorage.getItem('albumcheio.session')).toContain(
+        'redirect-access'
+      )
+    );
+    expect(window.location.hash).toBe('');
   });
 });
