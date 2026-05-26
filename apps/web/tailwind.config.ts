@@ -5,10 +5,13 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        ink: '#172026',
-        ocean: '#0f766e',
-        paper: '#f7f7f2',
-        line: '#d9e2df'
+        dark: '#0F172A',
+        danger: '#E11D48',
+        gold: '#F59E0B',
+        ink: '#1E293B',
+        ocean: '#059669',
+        paper: '#F8FAFC',
+        line: '#D9E2DF'
       },
       fontFamily: {
         sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif']

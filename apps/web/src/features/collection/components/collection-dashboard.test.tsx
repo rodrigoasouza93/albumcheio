@@ -154,13 +154,13 @@ describe('CollectionDashboard', () => {
 
     expect((await screen.findAllByText('50%'))[0]).toBeVisible();
     expect(
-      screen.getByText(/1 owned, 1 missing from 2 stickers/)
+      screen.getByText(/1 tenho, 1 faltando de 2 figurinhas/)
     ).toBeVisible();
-    expect(screen.getAllByText('Repeated')[0]).toBeVisible();
-    expect(screen.getAllByText('Missing')[0]).toBeVisible();
+    expect(screen.getAllByText('Repetida')[0]).toBeVisible();
+    expect(screen.getAllByText('Faltando')[0]).toBeVisible();
     expect(screen.getByText('BRA02 · Forward')).toBeVisible();
     expect(screen.getByText('BRA01 · Badge')).toBeVisible();
-    expect(screen.getByText('2 available')).toBeVisible();
+    expect(screen.getByText('2 disponíveis')).toBeVisible();
   });
 
   it('searches for nonexistent codes and updates quantities', async () => {
@@ -269,12 +269,14 @@ describe('CollectionDashboard', () => {
 
     expect((await screen.findAllByText('100%'))[0]).toBeVisible();
 
-    fireEvent.change(screen.getByLabelText('Sticker code'), {
+    fireEvent.change(screen.getByLabelText('Código da figurinha'), {
       target: { value: 'ZZZ99' }
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Search' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Buscar' }));
 
-    expect(await screen.findByText('Not in this album · ZZZ99')).toBeVisible();
+    expect(
+      await screen.findByText('Não está neste álbum · ZZZ99')
+    ).toBeVisible();
 
     const quantityInput = screen.getByDisplayValue('2');
     fireEvent.change(quantityInput, { target: { value: '1' } });
@@ -288,8 +290,8 @@ describe('CollectionDashboard', () => {
     );
     expect(
       within(
-        screen.getByRole('heading', { name: 'Repeated' }).parentElement!
-      ).getByText('No repeated stickers in this filter.')
+        screen.getByRole('heading', { name: 'Repetidas' }).parentElement!
+      ).getByText('Nenhuma figurinha repetida neste filtro.')
     ).toBeVisible();
   });
 });

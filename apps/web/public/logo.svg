@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="240" viewBox="0 0 240 240">
+  <rect width="240" height="240" fill="#FFFFFF"/>
+  <g transform="translate(80,40)">
+    <rect x="20" y="0" width="40" height="40" rx="8" fill="#0F172A"/>
+    <rect x="10" y="40" width="60" height="40" rx="8" fill="#0F172A"/>
+    <rect x="0" y="80" width="80" height="40" rx="8" fill="#0F172A"/>
+    <rect x="10" y="120" width="60" height="40" rx="8" fill="#0F172A"/>
+    <rect x="20" y="160" width="40" height="40" rx="8" fill="#0F172A"/>
+    <rect x="30" y="-20" width="20" height="20" rx="4" fill="#F59E0B"/>
+  </g>
+  <text x="120" y="230" font-family="Inter, sans-serif" font-size="28" font-weight="700" text-anchor="middle" fill="#0F172A">
+    &#193;LBUM CHEIO
+  </text>
+</svg>

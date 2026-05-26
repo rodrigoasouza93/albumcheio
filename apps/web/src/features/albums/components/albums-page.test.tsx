@@ -129,7 +129,7 @@ describe('AlbumsPage', () => {
     );
 
     expect(
-      await screen.findByRole('heading', { name: 'No albums yet' })
+      await screen.findByRole('heading', { name: 'Nenhum álbum ainda' })
     ).toBeVisible();
   });
 
@@ -189,19 +189,19 @@ describe('AlbumsPage', () => {
     );
 
     expect(
-      await screen.findByRole('heading', { name: 'No albums yet' })
+      await screen.findByRole('heading', { name: 'Nenhum álbum ainda' })
     ).toBeVisible();
 
-    fireEvent.change(screen.getByLabelText('Album name'), {
+    fireEvent.change(screen.getByLabelText('Nome do álbum'), {
       target: { value: 'Copa America 2028' }
     });
-    fireEvent.change(screen.getByLabelText('Edition'), {
+    fireEvent.change(screen.getByLabelText('Edição'), {
       target: { value: 'Collectors' }
     });
-    fireEvent.change(screen.getByLabelText('Description'), {
+    fireEvent.change(screen.getByLabelText('Descrição'), {
       target: { value: 'Manual catalog' }
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Create album' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Criar álbum' }));
 
     expect(
       await screen.findByRole('heading', { name: 'Copa America 2028' })

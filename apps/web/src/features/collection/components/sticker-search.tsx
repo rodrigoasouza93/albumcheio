@@ -15,10 +15,10 @@ interface StickerSearchProps {
 
 const getResultClasses = (status: StickerCollectionStatus['status']) => {
   const classes: Record<StickerCollectionStatus['status'], string> = {
-    duplicate: 'border-amber-300 bg-amber-50 text-amber-950',
-    missing: 'border-red-200 bg-red-50 text-red-900',
+    duplicate: 'border-danger bg-danger text-white',
+    missing: 'border-danger bg-danger text-white',
     not_found: 'border-slate-300 bg-slate-50 text-slate-800',
-    owned: 'border-emerald-300 bg-emerald-50 text-emerald-950'
+    owned: 'border-ocean bg-ocean text-white'
   };
 
   return classes[status];
@@ -37,11 +37,11 @@ export function StickerSearch({
   };
 
   return (
-    <section className="rounded-md border border-line bg-white shadow-sm">
+    <section className="rounded-xl border border-line bg-white">
       <div className="border-b border-line px-5 py-4">
-        <h2 className="text-lg font-semibold">Quick code lookup</h2>
+        <h2 className="text-lg font-semibold">Busca rápida por código</h2>
         <p className="mt-1 text-sm text-slate-600">
-          Check one sticker during buying or trading.
+          Consulte uma figurinha durante compras ou trocas.
         </p>
       </div>
 
@@ -51,9 +51,9 @@ export function StickerSearch({
           onSubmit={handleSubmit}
         >
           <label className="flex flex-1 flex-col gap-2 text-sm font-medium">
-            Sticker code
+            Código da figurinha
             <input
-              className="min-h-11 rounded-md border border-line bg-white px-3 py-2 font-mono text-base uppercase text-ink outline-none transition focus:border-ocean focus:ring-2 focus:ring-ocean/25"
+              className="min-h-11 rounded-lg border border-line bg-white px-3 py-2 text-base font-semibold uppercase text-ink outline-none transition focus:border-ocean focus:ring-2 focus:ring-ocean/25"
               placeholder="BRA01"
               value={code}
               onChange={(event) => setCode(event.target.value.toUpperCase())}
@@ -61,16 +61,16 @@ export function StickerSearch({
           </label>
           <button
             type="submit"
-            className="min-h-11 rounded-md bg-ocean px-5 py-2 text-sm font-semibold text-white transition hover:bg-teal-800 focus:outline-none focus:ring-2 focus:ring-ocean focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-slate-400"
+            className="min-h-11 rounded-lg bg-gold px-5 py-2 text-sm font-semibold text-dark transition hover:bg-amber-500 focus:outline-none focus:ring-2 focus:ring-gold focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-700"
             disabled={isSearching || code.trim().length === 0}
           >
-            {isSearching ? 'Searching...' : 'Search'}
+            {isSearching ? 'Buscando...' : 'Buscar'}
           </button>
         </form>
 
         {result ? (
           <div
-            className={`mt-4 rounded-md border px-4 py-3 ${getResultClasses(
+            className={`mt-4 rounded-xl border px-4 py-3 ${getResultClasses(
               result.status
             )}`}
             role={result.status === 'not_found' ? 'alert' : 'status'}
@@ -80,12 +80,12 @@ export function StickerSearch({
             </p>
             {result.sticker ? (
               <p className="mt-1 text-sm">
-                {result.sticker.title ?? 'Untitled sticker'} · quantity{' '}
-                {result.quantityTotal} · repeated {result.duplicateCount}
+                {result.sticker.title ?? 'Figurinha sem título'} · quantidade{' '}
+                {result.quantityTotal} · repetidas {result.duplicateCount}
               </p>
             ) : (
               <p className="mt-1 text-sm">
-                This code does not exist in the album catalog.
+                Este código não existe no catálogo do álbum.
               </p>
             )}
           </div>

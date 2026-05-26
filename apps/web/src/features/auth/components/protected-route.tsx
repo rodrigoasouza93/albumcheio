@@ -22,8 +22,8 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   if (status === 'loading') {
     return (
       <main className="flex min-h-screen items-center justify-center bg-paper px-4 text-ink">
-        <div className="rounded-md border border-line bg-white px-5 py-4 text-sm font-medium shadow-sm">
-          Loading your session...
+        <div className="rounded-xl border border-line bg-white px-5 py-4 text-sm font-medium">
+          Carregando sua sessão...
         </div>
       </main>
     );
@@ -32,8 +32,8 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   if (status === 'unauthenticated') {
     return (
       <main className="flex min-h-screen items-center justify-center bg-paper px-4 text-ink">
-        <div className="rounded-md border border-line bg-white px-5 py-4 text-sm font-medium shadow-sm">
-          Redirecting to sign in...
+        <div className="rounded-xl border border-line bg-white px-5 py-4 text-sm font-medium">
+          Redirecionando para o login...
         </div>
       </main>
     );

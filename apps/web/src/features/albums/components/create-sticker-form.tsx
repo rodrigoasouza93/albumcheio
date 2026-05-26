@@ -27,7 +27,7 @@ const getDuplicateCodeErrors = (
 ): readonly string[] => {
   if (error instanceof ApiError && error.status === 409) {
     return [
-      `Sticker code ${normalizedCode} already exists in this album. Review the code or choose another one.`
+      `O código ${normalizedCode} já existe neste álbum. Revise o código ou escolha outro.`
     ];
   }
 
@@ -54,15 +54,19 @@ export function CreateStickerForm({
   const validateForm = (): readonly string[] => [
     ...(resolvedSectionId.length > 0
       ? []
-      : ['Create a section before adding stickers.']),
-    ...(normalizedCode.length > 0 ? [] : ['Sticker code is required.']),
+      : ['Crie uma seção antes de adicionar figurinhas.']),
+    ...(normalizedCode.length > 0
+      ? []
+      : ['Código da figurinha é obrigatório.']),
     ...(number.length === 0 ||
     (Number.isInteger(Number(number)) && Number(number) > 0)
       ? []
-      : ['Sticker number must be a positive integer.']),
+      : ['O número da figurinha deve ser um número inteiro positivo.']),
     ...(Number.isInteger(Number(sortOrder)) && Number(sortOrder) >= 0
       ? []
-      : ['Sticker order must be a non-negative integer.'])
+      : [
+          'A ordem da figurinha deve ser um número inteiro maior ou igual a zero.'
+        ])
   ];
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -92,7 +96,7 @@ export function CreateStickerForm({
       setNumber('');
       setTitle('');
       setSortOrder(String(sticker.sortOrder + 10));
-      setSuccessMessage(`${sticker.code} was added.`);
+      setSuccessMessage(`${sticker.code} foi adicionada.`);
     } catch (error) {
       setErrors(getDuplicateCodeErrors(error, normalizedCode));
     }
@@ -100,25 +104,26 @@ export function CreateStickerForm({
 
   return (
     <form
-      className="rounded-md border border-line bg-white p-5 shadow-sm"
+      className="rounded-xl border border-line bg-white p-5"
       onSubmit={(event) => void handleSubmit(event)}
     >
       <div className="mb-5">
-        <h2 className="text-lg font-semibold">Create sticker</h2>
+        <h2 className="text-lg font-semibold">Criar figurinha</h2>
         <p className="mt-1 text-sm leading-6 text-slate-600">
-          Codes are normalized to uppercase so they are easy to compare.
+          Os códigos são convertidos para maiúsculas para facilitar a
+          comparação.
         </p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-4">
         <div className="md:col-span-2">
-          <Field label="Section">
+          <Field label="Seção">
             <SelectInput
               value={resolvedSectionId}
               onChange={(event) => setSectionId(event.target.value)}
             >
               {sections.length === 0 ? (
-                <option value="">No section available</option>
+                <option value="">Nenhuma seção disponível</option>
               ) : null}
               {sections.map((section) => (
                 <option key={section.id} value={section.id}>
@@ -130,8 +135,8 @@ export function CreateStickerForm({
         </div>
 
         <Field
-          label="Sticker code"
-          hint={normalizedCode ? `Preview: ${normalizedCode}` : undefined}
+          label="Código da figurinha"
+          hint={normalizedCode ? `Prévia: ${normalizedCode}` : undefined}
         >
           <TextInput
             autoComplete="off"
@@ -141,7 +146,7 @@ export function CreateStickerForm({
           />
         </Field>
 
-        <Field label="Order">
+        <Field label="Ordem">
           <TextInput
             inputMode="numeric"
             min={0}
@@ -153,7 +158,7 @@ export function CreateStickerForm({
       </div>
 
       <div className="mt-4 grid gap-4 md:grid-cols-2">
-        <Field label="Number">
+        <Field label="Número">
           <TextInput
             inputMode="numeric"
             min={1}
@@ -163,10 +168,10 @@ export function CreateStickerForm({
           />
         </Field>
 
-        <Field label="Title">
+        <Field label="Título">
           <TextInput
             autoComplete="off"
-            placeholder="Team badge"
+            placeholder="Escudo do time"
             value={title}
             onChange={(event) => setTitle(event.target.value)}
           />
@@ -177,10 +182,10 @@ export function CreateStickerForm({
         <FormFeedback errors={errors} successMessage={successMessage} />
         <button
           type="submit"
-          className="min-h-11 rounded-md bg-ocean px-4 py-2 text-sm font-semibold text-white transition hover:bg-teal-800 focus:outline-none focus:ring-2 focus:ring-ocean focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+          className="min-h-11 rounded-lg bg-gold px-4 py-2 text-sm font-semibold text-dark transition hover:bg-amber-500 focus:outline-none focus:ring-2 focus:ring-gold focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
           disabled={sections.length === 0 || isSubmitting}
         >
-          {isSubmitting ? 'Creating...' : 'Create sticker'}
+          {isSubmitting ? 'Criando...' : 'Criar figurinha'}
         </button>
       </div>
     </form>

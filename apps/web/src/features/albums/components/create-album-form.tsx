@@ -32,7 +32,7 @@ export function CreateAlbumForm({
   const [successMessage, setSuccessMessage] = useState('');
 
   const validateForm = (): readonly string[] =>
-    name.trim().length > 0 ? [] : ['Album name is required.'];
+    name.trim().length > 0 ? [] : ['Nome do álbum é obrigatório.'];
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -58,7 +58,7 @@ export function CreateAlbumForm({
       setName('');
       setEdition('');
       setDescription('');
-      setSuccessMessage(`${album.name} was created.`);
+      setSuccessMessage(`${album.name} foi criado.`);
     } catch (error) {
       setErrors(getCatalogErrors(error));
     }
@@ -66,27 +66,27 @@ export function CreateAlbumForm({
 
   return (
     <form
-      className="rounded-md border border-line bg-white p-5 shadow-sm"
+      className="rounded-xl border border-line bg-white p-5"
       onSubmit={(event) => void handleSubmit(event)}
     >
       <div className="mb-5">
-        <h2 className="text-lg font-semibold">Create album</h2>
+        <h2 className="text-lg font-semibold">Criar álbum</h2>
         <p className="mt-1 text-sm leading-6 text-slate-600">
-          Register the basic catalog before adding sections and stickers.
+          Cadastre o catálogo básico antes de adicionar seções e figurinhas.
         </p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
-        <Field label="Album name">
+        <Field label="Nome do álbum">
           <TextInput
             autoComplete="off"
-            placeholder="World Cup 2026"
+            placeholder="Copa do Mundo 2026"
             value={name}
             onChange={(event) => setName(event.target.value)}
           />
         </Field>
 
-        <Field label="Edition">
+        <Field label="Edição">
           <TextInput
             autoComplete="off"
             placeholder="Panini"
@@ -97,9 +97,9 @@ export function CreateAlbumForm({
       </div>
 
       <div className="mt-4">
-        <Field label="Description">
+        <Field label="Descrição">
           <TextArea
-            placeholder="Main tournament album"
+            placeholder="Álbum principal do torneio"
             value={description}
             onChange={(event) => setDescription(event.target.value)}
           />
@@ -110,10 +110,10 @@ export function CreateAlbumForm({
         <FormFeedback errors={errors} successMessage={successMessage} />
         <button
           type="submit"
-          className="min-h-11 rounded-md bg-ocean px-4 py-2 text-sm font-semibold text-white transition hover:bg-teal-800 focus:outline-none focus:ring-2 focus:ring-ocean focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+          className="min-h-11 rounded-lg bg-gold px-4 py-2 text-sm font-semibold text-dark transition hover:bg-amber-500 focus:outline-none focus:ring-2 focus:ring-gold focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
           disabled={isSubmitting}
         >
-          {isSubmitting ? 'Creating...' : 'Create album'}
+          {isSubmitting ? 'Criando...' : 'Criar álbum'}
         </button>
       </div>
     </form>

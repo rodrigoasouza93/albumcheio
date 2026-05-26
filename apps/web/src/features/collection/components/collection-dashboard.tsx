@@ -46,7 +46,7 @@ const getCollectionErrorMessage = (error: unknown): string => {
     return error.message;
   }
 
-  return 'Unable to load collection data. Please try again.';
+  return 'Não foi possível carregar os dados da coleção. Tente novamente.';
 };
 
 const getSectionIdQuery = (sectionId: string): string | undefined =>
@@ -309,10 +309,10 @@ export function CollectionDashboard({
 
   if (stickers.length === 0) {
     return (
-      <section className="rounded-md border border-line bg-white px-5 py-6 shadow-sm">
-        <h2 className="text-lg font-semibold">Collection</h2>
+      <section className="rounded-xl border border-line bg-white px-5 py-6">
+        <h2 className="text-lg font-semibold">Coleção</h2>
         <p className="mt-2 text-sm text-slate-600">
-          Create stickers before registering quantities.
+          Crie figurinhas antes de registrar quantidades.
         </p>
       </section>
     );
@@ -322,26 +322,26 @@ export function CollectionDashboard({
     <div className="flex flex-col gap-6">
       {status === 'loading' ? (
         <div
-          className="rounded-md border border-line bg-white px-5 py-6 text-sm text-slate-700 shadow-sm"
+          className="rounded-xl border border-line bg-white px-5 py-6 text-sm text-slate-700"
           role="status"
         >
-          Loading collection data...
+          Carregando dados da coleção...
         </div>
       ) : null}
 
       {status === 'error' ? (
         <div
-          className="rounded-md border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-800"
+          className="rounded-xl border border-danger bg-danger px-5 py-4 text-sm text-white"
           role="alert"
         >
-          <p className="font-semibold">Collection could not be loaded</p>
+          <p className="font-semibold">Não foi possível carregar a coleção</p>
           <p className="mt-1">{errorMessage}</p>
           <button
             type="button"
-            className="mt-4 min-h-11 rounded-md border border-red-300 bg-white px-4 py-2 text-sm font-semibold text-red-800 transition hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-700 focus:ring-offset-2"
+            className="mt-4 min-h-11 rounded-lg bg-white px-4 py-2 text-sm font-semibold text-danger transition hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-danger"
             onClick={() => void loadCollection()}
           >
-            Try again
+            Tentar novamente
           </button>
         </div>
       ) : null}
