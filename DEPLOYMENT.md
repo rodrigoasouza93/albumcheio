@@ -39,7 +39,7 @@ https://albumcheio-api.onrender.com/api/v1
 
 The root `render.yaml` defines a Node web service for `apps/api`.
 
-- Build command: `corepack enable && pnpm install --frozen-lockfile && pnpm run build:api`
+- Build command: `pnpm install --frozen-lockfile && pnpm run build:api`
 - Start command: `pnpm --filter @albumcheio/api start`
 - Health check: `/api/v1/health`
 
