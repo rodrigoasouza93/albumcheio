@@ -7,6 +7,7 @@ import {
 
 import { ProfilesService } from '../profiles/profiles.service.js';
 import { SupabaseService } from '../supabase/supabase.service.js';
+import { MetricsService } from '../observability/metrics.service.js';
 import type { SupabaseAuthPayload } from '../supabase/supabase.types.js';
 import { mapSupabaseError } from './supabase-error.mapper.js';
 import type {
@@ -22,7 +23,9 @@ export class AuthService {
     @Inject(SupabaseService)
     private readonly supabaseService: SupabaseService,
     @Inject(ProfilesService)
-    private readonly profilesService: ProfilesService
+    private readonly profilesService: ProfilesService,
+    @Inject(MetricsService)
+    private readonly metricsService: MetricsService
   ) {}
 
   public async register(
@@ -55,6 +58,7 @@ export class AuthService {
         }
       };
     } catch (error) {
+      this.metricsService.recordAuthFailure('register_failed');
       throw mapSupabaseError(error);
     }
   }
@@ -85,6 +89,7 @@ export class AuthService {
         }
       };
     } catch (error) {
+      this.metricsService.recordAuthFailure('login_failed');
       throw mapSupabaseError(error);
     }
   }

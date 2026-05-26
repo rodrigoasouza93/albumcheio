@@ -2,6 +2,7 @@ import { NotFoundException } from '@nestjs/common';
 import { describe, expect, it, vi } from 'vitest';
 
 import { SupabaseApiError } from '../supabase/supabase-api.error.js';
+import type { MetricsService } from '../observability/metrics.service.js';
 import type { CollectionsRepository } from './data/collections.repository.js';
 import { CollectionsService } from './collections.service.js';
 
@@ -48,13 +49,32 @@ const itemRow = {
   updated_at: timestamp
 };
 
+const createMetricsService = () => {
+  const observeProgressCalculation = vi.fn();
+  const recordCollectionUpdate = vi.fn();
+  const recordStickerSearch = vi.fn();
+
+  return {
+    service: {
+      observeProgressCalculation,
+      recordCollectionUpdate,
+      recordStickerSearch
+    } as unknown as MetricsService,
+    observeProgressCalculation,
+    recordCollectionUpdate,
+    recordStickerSearch
+  };
+};
+
 describe('CollectionsService', () => {
   it('sets quantity and derives owned and duplicate state', async () => {
     const repository = {
       getSticker: vi.fn().mockResolvedValue(stickerRow),
       setStickerQuantity: vi.fn().mockResolvedValue(itemRow)
     } as unknown as CollectionsRepository;
-    const service = new CollectionsService(repository);
+    const { recordCollectionUpdate, service: metricsService } =
+      createMetricsService();
+    const service = new CollectionsService(repository, metricsService);
 
     const item = await service.setStickerQuantity({
       accessToken,
@@ -73,6 +93,7 @@ describe('CollectionsService', () => {
       createdAt: timestamp,
       updatedAt: timestamp
     });
+    expect(recordCollectionUpdate).toHaveBeenCalledWith('success');
   });
 
   it('differentiates missing, duplicate, and nonexistent code search', async () => {
@@ -87,7 +108,9 @@ describe('CollectionsService', () => {
         .mockResolvedValueOnce(null)
         .mockResolvedValueOnce(itemRow)
     } as unknown as CollectionsRepository;
-    const service = new CollectionsService(repository);
+    const { recordStickerSearch, service: metricsService } =
+      createMetricsService();
+    const service = new CollectionsService(repository, metricsService);
 
     const missing = await service.searchSticker({
       accessToken,
@@ -118,6 +141,9 @@ describe('CollectionsService', () => {
       status: 'not_found',
       sticker: null
     });
+    expect(recordStickerSearch).toHaveBeenCalledWith('missing');
+    expect(recordStickerSearch).toHaveBeenCalledWith('duplicate');
+    expect(recordStickerSearch).toHaveBeenCalledWith('not_found');
   });
 
   it('calculates overall and section progress from quantities', async () => {
@@ -128,7 +154,9 @@ describe('CollectionsService', () => {
       listAlbumCollectionItems: vi.fn().mockResolvedValue([itemRow]),
       listAlbumSections: vi.fn().mockResolvedValue([sectionRow])
     } as unknown as CollectionsRepository;
-    const service = new CollectionsService(repository);
+    const { observeProgressCalculation, service: metricsService } =
+      createMetricsService();
+    const service = new CollectionsService(repository, metricsService);
 
     const progress = await service.getAlbumProgress({
       accessToken,
@@ -154,6 +182,9 @@ describe('CollectionsService', () => {
         }
       ]
     });
+    expect(observeProgressCalculation).toHaveBeenCalledWith(
+      expect.objectContaining({ outcome: 'success' })
+    );
   });
 
   it('lists paginated missing and duplicate stickers', async () => {
@@ -163,7 +194,8 @@ describe('CollectionsService', () => {
         .mockResolvedValue([stickerRow, secondStickerRow]),
       listAlbumCollectionItems: vi.fn().mockResolvedValue([itemRow])
     } as unknown as CollectionsRepository;
-    const service = new CollectionsService(repository);
+    const { service: metricsService } = createMetricsService();
+    const service = new CollectionsService(repository, metricsService);
 
     const missing = await service.listMissing({
       accessToken,
@@ -206,7 +238,9 @@ describe('CollectionsService', () => {
         .mockRejectedValue(new SupabaseApiError(404, 'Sticker not found')),
       setStickerQuantity
     } as unknown as CollectionsRepository;
-    const service = new CollectionsService(repository);
+    const { recordCollectionUpdate, service: metricsService } =
+      createMetricsService();
+    const service = new CollectionsService(repository, metricsService);
 
     await expect(
       service.setStickerQuantity({
@@ -217,5 +251,6 @@ describe('CollectionsService', () => {
       })
     ).rejects.toThrow(NotFoundException);
     expect(setStickerQuantity).not.toHaveBeenCalled();
+    expect(recordCollectionUpdate).toHaveBeenCalledWith('failure');
   });
 });

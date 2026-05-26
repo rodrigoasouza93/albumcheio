@@ -5,6 +5,7 @@ import type { SupabaseClient } from '../supabase/supabase-client.js';
 import { SupabaseApiError } from '../supabase/supabase-api.error.js';
 import type { SupabaseService } from '../supabase/supabase.service.js';
 import type { ProfilesService } from '../profiles/profiles.service.js';
+import type { MetricsService } from '../observability/metrics.service.js';
 import { AuthService } from './auth.service.js';
 
 const profile = {
@@ -27,6 +28,14 @@ const sessionPayload = {
   }
 };
 
+const createMetricsService = (): MetricsService => {
+  const recordAuthFailure = vi.fn();
+
+  return {
+    recordAuthFailure
+  } as unknown as MetricsService;
+};
+
 describe('AuthService', () => {
   it('registers a Supabase user and creates a profile', async () => {
     const authClient = {
@@ -39,7 +48,11 @@ describe('AuthService', () => {
     const profilesService = {
       createProfile
     } as unknown as ProfilesService;
-    const service = new AuthService(supabaseService, profilesService);
+    const service = new AuthService(
+      supabaseService,
+      profilesService,
+      createMetricsService()
+    );
 
     const response = await service.register({
       name: 'Rodrigo',
@@ -82,7 +95,8 @@ describe('AuthService', () => {
       } as unknown as SupabaseService,
       {
         createProfile: vi.fn()
-      } as unknown as ProfilesService
+      } as unknown as ProfilesService,
+      createMetricsService()
     );
 
     await expect(
@@ -106,7 +120,8 @@ describe('AuthService', () => {
       } as unknown as SupabaseService,
       {
         getProfile: vi.fn()
-      } as unknown as ProfilesService
+      } as unknown as ProfilesService,
+      createMetricsService()
     );
 
     await expect(
@@ -136,7 +151,8 @@ describe('AuthService', () => {
       } as unknown as SupabaseService,
       {
         getOrCreateProfile
-      } as unknown as ProfilesService
+      } as unknown as ProfilesService,
+      createMetricsService()
     );
 
     await service.login({

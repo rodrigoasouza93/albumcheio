@@ -1,12 +1,13 @@
 import { Module } from '@nestjs/common';
 
+import { ObservabilityModule } from '../observability/observability.module.js';
 import { SupabaseModule } from '../supabase/supabase.module.js';
 import { StickersRepository } from './data/stickers.repository.js';
 import { StickersController } from './stickers.controller.js';
 import { StickersService } from './stickers.service.js';
 
 @Module({
-  imports: [SupabaseModule],
+  imports: [SupabaseModule, ObservabilityModule],
   controllers: [StickersController],
   providers: [StickersService, StickersRepository]
 })

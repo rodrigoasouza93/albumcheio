@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { SupabaseClient } from '../supabase/supabase-client.js';
 import { SupabaseApiError } from '../supabase/supabase-api.error.js';
 import type { SupabaseService } from '../supabase/supabase.service.js';
+import type { MetricsService } from '../observability/metrics.service.js';
 import { SupabaseAuthGuard } from './supabase-auth.guard.js';
 
 const createContext = (request: {
@@ -16,6 +17,17 @@ const createContext = (request: {
       getRequest: () => request
     })
   }) as unknown as ExecutionContext;
+
+const createMetricsService = () => {
+  const recordAuthFailure = vi.fn();
+
+  return {
+    service: {
+      recordAuthFailure
+    } as unknown as MetricsService,
+    recordAuthFailure
+  };
+};
 
 describe('SupabaseAuthGuard', () => {
   it('attaches the authenticated user to the request', async () => {
@@ -38,7 +50,8 @@ describe('SupabaseAuthGuard', () => {
     const supabaseService = {
       createUserClient: vi.fn().mockReturnValue(userClient)
     } as unknown as SupabaseService;
-    const guard = new SupabaseAuthGuard(supabaseService);
+    const { service: metricsService } = createMetricsService();
+    const guard = new SupabaseAuthGuard(supabaseService, metricsService);
 
     const isAllowed = await guard.canActivate(createContext(request));
 
@@ -57,13 +70,19 @@ describe('SupabaseAuthGuard', () => {
   });
 
   it('rejects requests without bearer tokens', async () => {
-    const guard = new SupabaseAuthGuard({
-      createUserClient: vi.fn()
-    } as unknown as SupabaseService);
+    const { recordAuthFailure, service: metricsService } =
+      createMetricsService();
+    const guard = new SupabaseAuthGuard(
+      {
+        createUserClient: vi.fn()
+      } as unknown as SupabaseService,
+      metricsService
+    );
 
     await expect(
       guard.canActivate(createContext({ headers: {} }))
     ).rejects.toThrow(UnauthorizedException);
+    expect(recordAuthFailure).toHaveBeenCalledWith('missing_bearer_token');
   });
 
   it('maps Supabase token failures to unauthorized errors', async () => {
@@ -72,9 +91,14 @@ describe('SupabaseAuthGuard', () => {
         .fn()
         .mockRejectedValue(new SupabaseApiError(401, 'jwt expired'))
     } as unknown as SupabaseClient;
-    const guard = new SupabaseAuthGuard({
-      createUserClient: vi.fn().mockReturnValue(userClient)
-    } as unknown as SupabaseService);
+    const { recordAuthFailure, service: metricsService } =
+      createMetricsService();
+    const guard = new SupabaseAuthGuard(
+      {
+        createUserClient: vi.fn().mockReturnValue(userClient)
+      } as unknown as SupabaseService,
+      metricsService
+    );
 
     await expect(
       guard.canActivate(
@@ -85,5 +109,6 @@ describe('SupabaseAuthGuard', () => {
         })
       )
     ).rejects.toThrow(UnauthorizedException);
+    expect(recordAuthFailure).toHaveBeenCalledWith('invalid_bearer_token');
   });
 });

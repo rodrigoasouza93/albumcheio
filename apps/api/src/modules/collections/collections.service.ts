@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 
 import { mapSupabaseError } from '../auth/supabase-error.mapper.js';
+import { MetricsService } from '../observability/metrics.service.js';
 import type {
   SupabaseAlbumSectionRow,
   SupabaseCollectionItemRow,
@@ -26,7 +27,9 @@ import type {
 export class CollectionsService {
   public constructor(
     @Inject(CollectionsRepository)
-    private readonly collectionsRepository: CollectionsRepository
+    private readonly collectionsRepository: CollectionsRepository,
+    @Inject(MetricsService)
+    private readonly metricsService: MetricsService
   ) {}
 
   public async setStickerQuantity(
@@ -39,8 +42,11 @@ export class CollectionsService {
       );
       const item = await this.collectionsRepository.setStickerQuantity(input);
 
+      this.metricsService.recordCollectionUpdate('success');
+
       return this.mapCollectionItem(item);
     } catch (error) {
+      this.metricsService.recordCollectionUpdate('failure');
       throw mapSupabaseError(error);
     }
   }
@@ -52,6 +58,8 @@ export class CollectionsService {
       const sticker = await this.collectionsRepository.findStickerByCode(input);
 
       if (!sticker) {
+        this.metricsService.recordStickerSearch('not_found');
+
         return {
           albumId: input.albumId,
           code: input.code,
@@ -70,11 +78,14 @@ export class CollectionsService {
       });
       const quantityTotal = item?.quantity_total ?? 0;
       const duplicateCount = this.calculateDuplicateCount(quantityTotal);
+      const status = this.getSearchStatus(quantityTotal);
+
+      this.metricsService.recordStickerSearch(status);
 
       return {
         albumId: input.albumId,
         code: input.code,
-        status: this.getSearchStatus(quantityTotal),
+        status,
         sticker: this.mapSticker(sticker),
         quantityTotal,
         owned: quantityTotal > 0,
@@ -88,6 +99,8 @@ export class CollectionsService {
   public async getAlbumProgress(
     input: CollectionProgressInput
   ): Promise<AlbumProgress> {
+    const startedAt = performance.now();
+
     try {
       const [stickers, items, sections] = await Promise.all([
         this.collectionsRepository.listAlbumStickers(input.accessToken, {
@@ -108,7 +121,7 @@ export class CollectionsService {
       ).length;
       const total = stickers.length;
 
-      return {
+      const progress = {
         albumId: input.albumId,
         total,
         owned,
@@ -116,7 +129,18 @@ export class CollectionsService {
         percentage: this.calculatePercentage(owned, total),
         sections: sectionProgress
       };
+
+      this.metricsService.observeProgressCalculation({
+        outcome: 'success',
+        durationSeconds: (performance.now() - startedAt) / 1000
+      });
+
+      return progress;
     } catch (error) {
+      this.metricsService.observeProgressCalculation({
+        outcome: 'failure',
+        durationSeconds: (performance.now() - startedAt) / 1000
+      });
       throw mapSupabaseError(error);
     }
   }

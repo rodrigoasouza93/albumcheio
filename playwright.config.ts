@@ -5,12 +5,12 @@ export default defineConfig({
   fullyParallel: true,
   reporter: 'list',
   use: {
-    baseURL: 'http://127.0.0.1:3000',
+    baseURL: 'http://localhost:3000',
     trace: 'on-first-retry'
   },
   webServer: {
     command: 'pnpm run dev:web',
-    url: 'http://127.0.0.1:3000',
+    url: 'http://localhost:3000',
     reuseExistingServer: !process.env.CI,
     timeout: 120_000
   },
@@ -18,6 +18,10 @@ export default defineConfig({
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] }
+    },
+    {
+      name: 'mobile-chrome',
+      use: { ...devices['Pixel 5'] }
     }
   ]
 });
