@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { AuthenticatedShell } from '@web/features/auth/components/authenticated-shell';
 import { ProtectedRoute } from '@web/features/auth/components/protected-route';
 import { useSession } from '@web/features/auth/hooks/session-context';
+import { CollectionDashboard } from '@web/features/collection/components/collection-dashboard';
 import type {
   AlbumDetail,
   AlbumSectionSummary,
@@ -274,6 +275,14 @@ export function AlbumDetailPage({ albumId }: AlbumDetailPageProps) {
                   onCreateSticker={handleCreateSticker}
                 />
               </div>
+
+              <CollectionDashboard
+                albumId={albumId}
+                sections={album.sections}
+                stickers={stickers}
+                token={accessToken ?? ''}
+                onUnauthorized={clearSession}
+              />
 
               <CatalogSummary sections={album.sections} stickers={stickers} />
             </>

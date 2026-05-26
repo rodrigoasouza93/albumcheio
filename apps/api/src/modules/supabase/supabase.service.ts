@@ -42,11 +42,19 @@ export class SupabaseService {
 
   private getConfig(): SupabaseConfig {
     const url = process.env.SUPABASE_URL;
-    const anonKey = process.env.SUPABASE_ANON_KEY;
+    const anonKey =
+      process.env.SUPABASE_ANON_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const missingVariables = [
+      !url ? 'SUPABASE_URL' : null,
+      !anonKey ? 'SUPABASE_ANON_KEY' : null,
+      !serviceRoleKey ? 'SUPABASE_SERVICE_ROLE_KEY' : null
+    ].filter((variableName): variableName is string => variableName !== null);
 
     if (!url || !anonKey || !serviceRoleKey) {
-      throw new Error('Supabase environment variables are not configured');
+      throw new Error(
+        `Supabase environment variables are not configured: ${missingVariables.join(', ')}`
+      );
     }
 
     return {

@@ -1,13 +1,18 @@
 import type {
   AlbumDetail,
   AlbumPage,
+  AlbumProgress,
   AlbumSectionSummary,
   AlbumSummary,
   AuthSession,
+  CollectionItemSummary,
   CreateAlbumInput,
   CreateAlbumSectionInput,
   CreateStickerInput,
+  DuplicateStickerPage,
+  MissingStickerPage,
   StickerPage,
+  StickerCollectionStatus,
   StickerSummary,
   UserProfile
 } from './api-types';
@@ -232,4 +237,72 @@ export const createSticker = (input: {
     method: 'POST',
     token: input.token,
     body: input.sticker
+  });
+
+export const searchCollectionSticker = (input: {
+  readonly token: string;
+  readonly albumId: string;
+  readonly code: string;
+}): Promise<StickerCollectionStatus> =>
+  requestApi<StickerCollectionStatus>(
+    `/albums/${input.albumId}/collection/search`,
+    {
+      token: input.token,
+      query: {
+        code: input.code
+      }
+    }
+  );
+
+export const getAlbumProgress = (input: {
+  readonly token: string;
+  readonly albumId: string;
+}): Promise<AlbumProgress> =>
+  requestApi<AlbumProgress>(`/albums/${input.albumId}/progress`, {
+    token: input.token
+  });
+
+export const listMissingStickers = (input: {
+  readonly token: string;
+  readonly albumId: string;
+  readonly sectionId?: string;
+  readonly limit: number;
+  readonly offset: number;
+}): Promise<MissingStickerPage> =>
+  requestApi<MissingStickerPage>(`/albums/${input.albumId}/missing`, {
+    token: input.token,
+    query: {
+      sectionId: input.sectionId,
+      limit: input.limit,
+      offset: input.offset
+    }
+  });
+
+export const listDuplicateStickers = (input: {
+  readonly token: string;
+  readonly albumId: string;
+  readonly sectionId?: string;
+  readonly limit: number;
+  readonly offset: number;
+}): Promise<DuplicateStickerPage> =>
+  requestApi<DuplicateStickerPage>(`/albums/${input.albumId}/duplicates`, {
+    token: input.token,
+    query: {
+      sectionId: input.sectionId,
+      limit: input.limit,
+      offset: input.offset
+    }
+  });
+
+export const setStickerQuantity = (input: {
+  readonly token: string;
+  readonly stickerId: string;
+  readonly quantityTotal: number;
+}): Promise<CollectionItemSummary> =>
+  requestApi<CollectionItemSummary>(`/collection-items/${input.stickerId}`, {
+    method: 'PATCH',
+    token: input.token,
+    body: {
+      quantityTotal: input.quantityTotal
+    }
   });

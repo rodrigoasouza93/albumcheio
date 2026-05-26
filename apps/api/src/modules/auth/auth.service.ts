@@ -66,8 +66,9 @@ export class AuthService {
         .signInWithPassword(input);
       const session = this.requireSession(payload);
       const user = this.requireUser(payload);
-      const profile = await this.profilesService.getProfile({
+      const profile = await this.profilesService.getOrCreateProfile({
         userId: user.id,
+        name: this.getProfileName(user, input.email),
         accessToken: session.access_token
       });
 
@@ -130,5 +131,20 @@ export class AuthService {
     }
 
     return payload.user;
+  }
+
+  private getProfileName(
+    user: NonNullable<SupabaseAuthPayload['user']>,
+    email: string
+  ): string {
+    const metadataName = user.user_metadata?.name?.trim();
+
+    if (metadataName) {
+      return metadataName;
+    }
+
+    const emailName = (user.email ?? email).split('@')[0]?.trim();
+
+    return emailName || 'Collector';
   }
 }

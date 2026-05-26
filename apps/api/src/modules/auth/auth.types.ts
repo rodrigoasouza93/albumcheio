@@ -12,6 +12,7 @@ export interface LoginInput {
 export interface AuthenticatedUser {
   readonly id: string;
   readonly email: string | null;
+  readonly name: string | null;
   readonly accessToken: string;
 }
 
