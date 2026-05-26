@@ -10,4 +10,4 @@
 - [x] 6.0 Implementar frontend autenticado e navegação principal de álbuns
 - [x] 7.0 Implementar frontend de cadastro manual de álbuns, seções e figurinhas
 - [x] 8.0 Implementar frontend de coleção, quantidades, busca, progresso, faltantes e repetidas
-- [ ] 9.0 Implementar observabilidade, hardening de segurança, acessibilidade e E2E
+- [x] 9.0 Implementar observabilidade, hardening de segurança, acessibilidade e E2E

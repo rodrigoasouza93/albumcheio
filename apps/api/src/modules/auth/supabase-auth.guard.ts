@@ -2,6 +2,7 @@ import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import type { CanActivate, ExecutionContext } from '@nestjs/common';
 
 import { SupabaseService } from '../supabase/supabase.service.js';
+import { MetricsService } from '../observability/metrics.service.js';
 import { mapSupabaseError } from './supabase-error.mapper.js';
 import type { AuthenticatedUser } from './auth.types.js';
 
@@ -14,7 +15,9 @@ interface RequestWithUser {
 export class SupabaseAuthGuard implements CanActivate {
   public constructor(
     @Inject(SupabaseService)
-    private readonly supabaseService: SupabaseService
+    private readonly supabaseService: SupabaseService,
+    @Inject(MetricsService)
+    private readonly metricsService: MetricsService
   ) {}
 
   public async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -22,6 +25,7 @@ export class SupabaseAuthGuard implements CanActivate {
     const accessToken = this.extractBearerToken(request);
 
     if (!accessToken) {
+      this.metricsService.recordAuthFailure('missing_bearer_token');
       throw new UnauthorizedException('Bearer token is required');
     }
 
@@ -39,6 +43,7 @@ export class SupabaseAuthGuard implements CanActivate {
 
       return true;
     } catch (error) {
+      this.metricsService.recordAuthFailure('invalid_bearer_token');
       throw mapSupabaseError(error);
     }
   }
