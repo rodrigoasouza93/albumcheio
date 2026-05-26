@@ -7,6 +7,8 @@
   "scripts": {
     "dev:web": "pnpm --filter @albumcheio/web dev",
     "dev:api": "pnpm --filter @albumcheio/api dev",
+    "build:web": "pnpm --filter @albumcheio/shared build && pnpm --filter @albumcheio/web build",
+    "build:api": "pnpm --filter @albumcheio/shared build && pnpm --filter @albumcheio/api build",
     "build": "pnpm --filter @albumcheio/shared build && pnpm --filter @albumcheio/api build && pnpm --filter @albumcheio/web build",
     "lint": "eslint . --max-warnings=0",
     "format": "prettier . --check",
