@@ -13,12 +13,15 @@ GitHub Actions runs on pull requests and pushes to `main`:
 
 ## Web on Vercel
 
-Create the Vercel project from the repository root so it can resolve the pnpm workspace and `@albumcheio/shared`.
+Create the Vercel project from the repository and set the project root to the Next.js app directory.
 
 - Framework preset: Next.js
+- Root directory: `apps/web`
 - Install command: `pnpm install --frozen-lockfile`
-- Build command: `pnpm run build:web`
-- Output directory: `apps/web/.next`
+- Build command: `pnpm run build`
+- Output directory: `.next`
+
+The Vercel configuration lives in `apps/web/vercel.json` so Vercel can detect the `next` dependency from `apps/web/package.json`.
 
 Required environment variables:
 
