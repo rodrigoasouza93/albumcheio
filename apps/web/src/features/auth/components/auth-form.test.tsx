@@ -43,12 +43,10 @@ describe('AuthForm', () => {
       </SessionProvider>
     );
 
-    fireEvent.click(screen.getAllByRole('button', { name: 'Sign in' })[1]);
+    fireEvent.click(screen.getAllByRole('button', { name: 'Entrar' })[1]);
 
-    expect(
-      await screen.findByText('Enter a valid email address.')
-    ).toBeVisible();
-    expect(screen.getByText('Password is required.')).toBeVisible();
+    expect(await screen.findByText('Informe um e-mail válido.')).toBeVisible();
+    expect(screen.getByText('Senha é obrigatória.')).toBeVisible();
   });
 
   it('creates an account and redirects to albums', async () => {
@@ -70,19 +68,17 @@ describe('AuthForm', () => {
       </SessionProvider>
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Create account' }));
-    fireEvent.change(screen.getByLabelText('Name'), {
+    fireEvent.click(screen.getByRole('button', { name: 'Criar conta' }));
+    fireEvent.change(screen.getByLabelText('Nome'), {
       target: { value: 'Ada Lovelace' }
     });
     fireEvent.change(screen.getByLabelText('Email'), {
       target: { value: 'ada@example.com' }
     });
-    fireEvent.change(screen.getByLabelText('Password'), {
+    fireEvent.change(screen.getByLabelText('Senha'), {
       target: { value: 'strong-password' }
     });
-    fireEvent.click(
-      screen.getAllByRole('button', { name: 'Create account' })[1]
-    );
+    fireEvent.click(screen.getAllByRole('button', { name: 'Criar conta' })[1]);
 
     await waitFor(() => expect(replaceMock).toHaveBeenCalledWith('/albums'));
     expect(localStorage.getItem('albumcheio.session')).toContain(

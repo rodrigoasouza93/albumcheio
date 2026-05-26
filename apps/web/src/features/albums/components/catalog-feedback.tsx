@@ -9,10 +9,10 @@ export function FormFeedback({ errors, successMessage }: FormFeedbackProps) {
   if (errors.length > 0) {
     return (
       <div
-        className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800"
+        className="rounded-xl border border-danger bg-danger px-3 py-2 text-sm text-white"
         role="alert"
       >
-        <p className="font-semibold">Check the form</p>
+        <p className="font-semibold">Revise o formulário</p>
         <ul className="mt-1 list-disc pl-5">
           {errors.map((error) => (
             <li key={error}>{error}</li>
@@ -25,7 +25,7 @@ export function FormFeedback({ errors, successMessage }: FormFeedbackProps) {
   if (successMessage.length > 0) {
     return (
       <p
-        className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-800"
+        className="rounded-xl border border-ocean bg-ocean px-3 py-2 text-sm font-medium text-white"
         role="status"
       >
         {successMessage}
@@ -51,5 +51,5 @@ export const getCatalogErrors = (error: unknown): readonly string[] => {
     return [error.message];
   }
 
-  return ['Something went wrong. Please try again.'];
+  return ['Algo deu errado. Tente novamente.'];
 };

@@ -117,7 +117,7 @@ describe('AlbumDetailPage', () => {
     ).toBeVisible();
     expect(screen.getByRole('heading', { name: 'Brazil' })).toBeVisible();
     expect(screen.getByText('BRA01')).toBeVisible();
-    expect(screen.getByText(/team/)).toBeVisible();
+    expect(screen.getByText('Time')).toBeVisible();
   });
 
   it('creates sections and stickers without reloading the page', async () => {
@@ -221,28 +221,28 @@ describe('AlbumDetailPage', () => {
       await screen.findByRole('heading', { name: 'World Cup 2026' })
     ).toBeVisible();
 
-    fireEvent.change(screen.getByLabelText('Section name'), {
+    fireEvent.change(screen.getByLabelText('Nome da seção'), {
       target: { value: 'Brazil' }
     });
-    fireEvent.change(screen.getByLabelText('Section code'), {
+    fireEvent.change(screen.getByLabelText('Código da seção'), {
       target: { value: 'bra' }
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Create section' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Criar seção' }));
 
     expect(
       await screen.findByRole('heading', { name: 'Brazil' })
     ).toBeVisible();
 
-    fireEvent.change(screen.getByLabelText('Sticker code'), {
+    fireEvent.change(screen.getByLabelText('Código da figurinha'), {
       target: { value: 'bra01' }
     });
-    fireEvent.change(screen.getByLabelText('Number'), {
+    fireEvent.change(screen.getByLabelText('Número'), {
       target: { value: '1' }
     });
-    fireEvent.change(screen.getByLabelText('Title'), {
+    fireEvent.change(screen.getByLabelText('Título'), {
       target: { value: 'Badge' }
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Create sticker' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Criar figurinha' }));
 
     expect(await screen.findByText('BRA01')).toBeVisible();
   });
@@ -328,14 +328,14 @@ describe('AlbumDetailPage', () => {
       await screen.findByRole('heading', { name: 'World Cup 2026' })
     ).toBeVisible();
 
-    fireEvent.change(screen.getByLabelText('Sticker code'), {
+    fireEvent.change(screen.getByLabelText('Código da figurinha'), {
       target: { value: 'bra01' }
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Create sticker' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Criar figurinha' }));
 
     expect(
       await screen.findByText(
-        'Sticker code BRA01 already exists in this album. Review the code or choose another one.'
+        'O código BRA01 já existe neste álbum. Revise o código ou escolha outro.'
       )
     ).toBeVisible();
   });

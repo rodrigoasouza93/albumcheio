@@ -82,14 +82,14 @@ const getErrorDetails = (body: unknown): readonly string[] => {
 
 const getErrorMessage = (body: unknown, status: number): string => {
   if (!isApiErrorBody(body)) {
-    return `Request failed with status ${status}`;
+    return `A requisição falhou com status ${status}`;
   }
 
   if (typeof body.message === 'string') {
     return body.message;
   }
 
-  return `Request failed with status ${status}`;
+  return `A requisição falhou com status ${status}`;
 };
 
 const parseResponseBody = async (response: Response): Promise<unknown> => {

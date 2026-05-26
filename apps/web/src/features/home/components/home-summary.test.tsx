@@ -8,7 +8,7 @@ describe('HomeSummary', () => {
     render(<HomeSummary />);
 
     expect(
-      screen.getByRole('heading', { name: 'AlbumCheio' })
+      screen.getByRole('heading', { name: 'Álbum Cheio' })
     ).toBeInTheDocument();
     expect(screen.getByText('Next.js App Router')).toBeInTheDocument();
   });

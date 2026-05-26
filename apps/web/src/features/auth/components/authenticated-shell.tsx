@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 
 import { useSession } from '../hooks/session-context';
@@ -23,24 +24,32 @@ export function AuthenticatedShell({ children }: AuthenticatedShellProps) {
       <header className="border-b border-line bg-white">
         <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
           <Link
-            className="text-lg font-semibold tracking-normal text-ink focus:outline-none focus:ring-2 focus:ring-ocean focus:ring-offset-2"
+            className="flex w-fit items-center gap-3 rounded-lg text-lg font-bold tracking-normal text-dark focus:outline-none focus:ring-2 focus:ring-gold focus:ring-offset-2"
             href="/albums"
           >
-            AlbumCheio
+            <Image
+              priority
+              src="/favicon.svg"
+              alt=""
+              width={36}
+              height={36}
+              aria-hidden="true"
+            />
+            <span>Álbum Cheio</span>
           </Link>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <p className="text-sm text-slate-600">
-              Signed in as{' '}
+              Conectado como{' '}
               <span className="font-semibold text-ink">
-                {session?.user.name ?? 'Collector'}
+                {session?.user.name ?? 'Colecionador'}
               </span>
             </p>
             <button
               type="button"
-              className="min-h-11 rounded-md border border-line px-4 py-2 text-sm font-semibold text-ink transition hover:bg-paper focus:outline-none focus:ring-2 focus:ring-ocean focus:ring-offset-2"
+              className="min-h-11 rounded-lg border border-line px-4 py-2 text-sm font-semibold text-ink transition hover:bg-paper focus:outline-none focus:ring-2 focus:ring-gold focus:ring-offset-2"
               onClick={() => void handleLogout()}
             >
-              Sign out
+              Sair
             </button>
           </div>
         </div>

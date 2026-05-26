@@ -18,7 +18,7 @@ const getAlbumsErrorMessage = (error: unknown): string => {
     return error.message;
   }
 
-  return 'Unable to load albums. Please try again.';
+  return 'Não foi possível carregar os álbuns. Tente novamente.';
 };
 
 export function AlbumsPage() {
@@ -69,7 +69,7 @@ export function AlbumsPage() {
     readonly description: string | null;
   }): Promise<AlbumSummary> => {
     if (!accessToken) {
-      throw new ApiError(401, 'Authentication is required.', []);
+      throw new ApiError(401, 'Autenticação obrigatória.', []);
     }
 
     setIsCreatingAlbum(true);
@@ -102,36 +102,38 @@ export function AlbumsPage() {
           <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p className="text-sm font-semibold uppercase tracking-[0.18em] text-ocean">
-                Albums
+                Álbuns
               </p>
-              <h1 className="mt-2 text-3xl font-semibold tracking-normal">
-                Registered albums
+              <h1 className="mt-2 text-3xl font-bold tracking-normal text-dark">
+                Álbuns cadastrados
               </h1>
             </div>
             <button
               type="button"
-              className="min-h-11 rounded-md border border-line bg-white px-4 py-2 text-sm font-semibold text-ink transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-ocean focus:ring-offset-2"
+              className="min-h-11 rounded-lg border border-line bg-white px-4 py-2 text-sm font-semibold text-ink transition hover:bg-paper focus:outline-none focus:ring-2 focus:ring-gold focus:ring-offset-2"
               onClick={() => void loadAlbums()}
             >
-              Refresh
+              Atualizar
             </button>
           </div>
 
           {status === 'loading' ? (
             <div
-              className="rounded-md border border-line bg-white px-5 py-6 text-sm text-slate-700 shadow-sm"
+              className="rounded-xl border border-line bg-white px-5 py-6 text-sm text-slate-700"
               role="status"
             >
-              Loading albums...
+              Carregando álbuns...
             </div>
           ) : null}
 
           {status === 'error' ? (
             <div
-              className="rounded-md border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-800"
+              className="rounded-xl border border-danger bg-danger px-5 py-4 text-sm text-white"
               role="alert"
             >
-              <p className="font-semibold">Albums could not be loaded</p>
+              <p className="font-semibold">
+                Não foi possível carregar os álbuns
+              </p>
               <p className="mt-1">{errorMessage}</p>
             </div>
           ) : null}
@@ -144,11 +146,11 @@ export function AlbumsPage() {
           ) : null}
 
           {status === 'ready' && albums.length === 0 ? (
-            <div className="rounded-md border border-dashed border-line bg-white px-5 py-8 shadow-sm">
-              <h2 className="text-lg font-semibold">No albums yet</h2>
+            <div className="rounded-xl border border-dashed border-line bg-white px-5 py-8">
+              <h2 className="text-lg font-semibold">Nenhum álbum ainda</h2>
               <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-                Albums created through the API will appear here. Once an album
-                exists, open it to inspect the registered sections.
+                Os álbuns criados aparecerão aqui. Quando houver um álbum,
+                abra-o para conferir as seções cadastradas.
               </p>
             </div>
           ) : null}
@@ -158,7 +160,7 @@ export function AlbumsPage() {
               {albums.map((album) => (
                 <Link
                   key={album.id}
-                  className="group rounded-md border border-line bg-white p-5 shadow-sm transition hover:border-ocean focus:outline-none focus:ring-2 focus:ring-ocean focus:ring-offset-2"
+                  className="group rounded-xl border border-line bg-white p-5 transition hover:border-ocean focus:outline-none focus:ring-2 focus:ring-gold focus:ring-offset-2"
                   href={`/albums/${album.id}`}
                 >
                   <div className="flex items-start justify-between gap-4">
@@ -167,10 +169,10 @@ export function AlbumsPage() {
                         {album.name}
                       </h2>
                       <p className="mt-1 text-sm text-slate-600">
-                        {album.edition ?? 'No edition informed'}
+                        {album.edition ?? 'Sem edição informada'}
                       </p>
                     </div>
-                    <span className="rounded border border-line px-2 py-1 text-xs font-semibold uppercase text-slate-600">
+                    <span className="rounded-lg border border-line px-2 py-1 text-xs font-semibold uppercase text-slate-600">
                       {album.status}
                     </span>
                   </div>
@@ -180,7 +182,7 @@ export function AlbumsPage() {
                     </p>
                   ) : null}
                   <p className="mt-5 text-sm font-semibold text-ocean group-hover:text-teal-800">
-                    Open album
+                    Abrir álbum
                   </p>
                 </Link>
               ))}

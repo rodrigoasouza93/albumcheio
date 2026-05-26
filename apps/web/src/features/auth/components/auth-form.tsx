@@ -16,7 +16,7 @@ const getErrorMessages = (error: unknown): readonly string[] => {
     return error.details.length > 0 ? error.details : [error.message];
   }
 
-  return ['Something went wrong. Please try again.'];
+  return ['Algo deu errado. Tente novamente.'];
 };
 
 export function AuthForm() {
@@ -31,21 +31,23 @@ export function AuthForm() {
   const isRegistering = mode === 'register';
 
   const title = useMemo(
-    () => (isRegistering ? 'Create your account' : 'Sign in to your albums'),
+    () => (isRegistering ? 'Crie sua conta' : 'Entre nos seus álbuns'),
     [isRegistering]
   );
 
   const validateForm = (): readonly string[] => [
-    ...(isRegistering && name.trim().length === 0 ? ['Name is required.'] : []),
+    ...(isRegistering && name.trim().length === 0
+      ? ['Nome é obrigatório.']
+      : []),
     ...(/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())
       ? []
-      : ['Enter a valid email address.']),
+      : ['Informe um e-mail válido.']),
     ...(password.length >= (isRegistering ? MIN_PASSWORD_LENGTH : 1)
       ? []
       : [
           isRegistering
-            ? `Password must have at least ${MIN_PASSWORD_LENGTH} characters.`
-            : 'Password is required.'
+            ? `A senha deve ter pelo menos ${MIN_PASSWORD_LENGTH} caracteres.`
+            : 'Senha é obrigatória.'
         ])
   ];
 
@@ -85,13 +87,13 @@ export function AuthForm() {
   };
 
   return (
-    <section className="w-full max-w-md rounded-md border border-line bg-white p-5 shadow-sm sm:p-6">
-      <div className="mb-6 flex rounded-md border border-line bg-paper p-1">
+    <section className="w-full max-w-md rounded-xl border border-line bg-white p-5 sm:p-6">
+      <div className="mb-6 flex rounded-lg border border-line bg-paper p-1">
         <button
           type="button"
-          className={`min-h-11 flex-1 rounded px-3 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-ocean focus:ring-offset-2 ${
+          className={`min-h-11 flex-1 rounded-lg px-3 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-gold focus:ring-offset-2 ${
             mode === 'login'
-              ? 'bg-ink text-white'
+              ? 'bg-dark text-white'
               : 'text-slate-700 hover:bg-white'
           }`}
           onClick={() => {
@@ -99,13 +101,13 @@ export function AuthForm() {
             setErrors([]);
           }}
         >
-          Sign in
+          Entrar
         </button>
         <button
           type="button"
-          className={`min-h-11 flex-1 rounded px-3 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-ocean focus:ring-offset-2 ${
+          className={`min-h-11 flex-1 rounded-lg px-3 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-gold focus:ring-offset-2 ${
             mode === 'register'
-              ? 'bg-ink text-white'
+              ? 'bg-dark text-white'
               : 'text-slate-700 hover:bg-white'
           }`}
           onClick={() => {
@@ -113,7 +115,7 @@ export function AuthForm() {
             setErrors([]);
           }}
         >
-          Create account
+          Criar conta
         </button>
       </div>
 
@@ -122,19 +124,19 @@ export function AuthForm() {
         onSubmit={(event) => void handleSubmit(event)}
       >
         <div>
-          <h1 className="text-2xl font-semibold tracking-normal text-ink">
+          <h1 className="text-2xl font-bold tracking-normal text-dark">
             {title}
           </h1>
           <p className="mt-2 text-sm leading-6 text-slate-600">
-            Manage your sticker albums and keep your collection private.
+            Gerencie seus álbuns de figurinhas e mantenha sua coleção privada.
           </p>
         </div>
 
         {isRegistering ? (
           <label className="flex flex-col gap-2 text-sm font-medium text-ink">
-            Name
+            Nome
             <input
-              className="min-h-11 rounded-md border border-line px-3 text-base font-normal text-ink outline-none transition focus:border-ocean focus:ring-2 focus:ring-ocean/20"
+              className="min-h-11 rounded-lg border border-line px-3 text-base font-normal text-ink outline-none transition focus:border-ocean focus:ring-2 focus:ring-ocean/20"
               autoComplete="name"
               value={name}
               onChange={(event) => setName(event.target.value)}
@@ -145,7 +147,7 @@ export function AuthForm() {
         <label className="flex flex-col gap-2 text-sm font-medium text-ink">
           Email
           <input
-            className="min-h-11 rounded-md border border-line px-3 text-base font-normal text-ink outline-none transition focus:border-ocean focus:ring-2 focus:ring-ocean/20"
+            className="min-h-11 rounded-lg border border-line px-3 text-base font-normal text-ink outline-none transition focus:border-ocean focus:ring-2 focus:ring-ocean/20"
             type="email"
             autoComplete="email"
             value={email}
@@ -154,9 +156,9 @@ export function AuthForm() {
         </label>
 
         <label className="flex flex-col gap-2 text-sm font-medium text-ink">
-          Password
+          Senha
           <input
-            className="min-h-11 rounded-md border border-line px-3 text-base font-normal text-ink outline-none transition focus:border-ocean focus:ring-2 focus:ring-ocean/20"
+            className="min-h-11 rounded-lg border border-line px-3 text-base font-normal text-ink outline-none transition focus:border-ocean focus:ring-2 focus:ring-ocean/20"
             type="password"
             autoComplete={isRegistering ? 'new-password' : 'current-password'}
             value={password}
@@ -166,10 +168,10 @@ export function AuthForm() {
 
         {errors.length > 0 ? (
           <div
-            className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800"
+            className="rounded-xl border border-danger bg-danger px-3 py-2 text-sm text-white"
             role="alert"
           >
-            <p className="font-semibold">Check the form</p>
+            <p className="font-semibold">Revise o formulário</p>
             <ul className="mt-1 list-disc pl-5">
               {errors.map((error) => (
                 <li key={error}>{error}</li>
@@ -180,14 +182,14 @@ export function AuthForm() {
 
         <button
           type="submit"
-          className="min-h-11 rounded-md bg-ocean px-4 py-2 text-sm font-semibold text-white transition hover:bg-teal-800 focus:outline-none focus:ring-2 focus:ring-ocean focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+          className="min-h-11 rounded-lg bg-gold px-4 py-2 text-sm font-semibold text-dark transition hover:bg-amber-500 focus:outline-none focus:ring-2 focus:ring-gold focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
           disabled={isSubmitting}
         >
           {isSubmitting
-            ? 'Please wait...'
+            ? 'Aguarde...'
             : isRegistering
-              ? 'Create account'
-              : 'Sign in'}
+              ? 'Criar conta'
+              : 'Entrar'}
         </button>
       </form>
     </section>

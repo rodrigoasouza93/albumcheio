@@ -35,7 +35,7 @@ const getAlbumErrorMessage = (error: unknown): string => {
     return error.message;
   }
 
-  return 'Unable to load the album. Please try again.';
+  return 'Não foi possível carregar o álbum. Tente novamente.';
 };
 
 const STICKER_PAGE_LIMIT = 100;
@@ -132,7 +132,7 @@ export function AlbumDetailPage({ albumId }: AlbumDetailPageProps) {
     input: CreateAlbumSectionInput
   ): Promise<AlbumSectionSummary> => {
     if (!accessToken) {
-      throw new ApiError(401, 'Authentication is required.', []);
+      throw new ApiError(401, 'Autenticação obrigatória.', []);
     }
 
     setSectionStatus('submitting');
@@ -171,7 +171,7 @@ export function AlbumDetailPage({ albumId }: AlbumDetailPageProps) {
     input: CreateStickerInput
   ): Promise<StickerSummary> => {
     if (!accessToken) {
-      throw new ApiError(401, 'Authentication is required.', []);
+      throw new ApiError(401, 'Autenticação obrigatória.', []);
     }
 
     setStickerStatus('submitting');
@@ -207,22 +207,22 @@ export function AlbumDetailPage({ albumId }: AlbumDetailPageProps) {
         <section className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-8 sm:px-6 lg:px-8">
           <div className="flex flex-col gap-4">
             <Link
-              className="w-fit text-sm font-semibold text-ocean focus:outline-none focus:ring-2 focus:ring-ocean focus:ring-offset-2"
+              className="w-fit text-sm font-semibold text-ocean focus:outline-none focus:ring-2 focus:ring-gold focus:ring-offset-2"
               href="/albums"
             >
-              Back to albums
+              Voltar para álbuns
             </Link>
 
             {status === 'ready' && album ? (
               <div>
                 <p className="text-sm font-semibold uppercase tracking-[0.18em] text-ocean">
-                  Album detail
+                  Detalhes do álbum
                 </p>
-                <h1 className="mt-2 text-3xl font-semibold tracking-normal">
+                <h1 className="mt-2 text-3xl font-bold tracking-normal text-dark">
                   {album.name}
                 </h1>
                 <p className="mt-2 text-sm text-slate-600">
-                  {album.edition ?? 'No edition informed'}
+                  {album.edition ?? 'Sem edição informada'}
                 </p>
                 {album.description ? (
                   <p className="mt-4 max-w-3xl text-base leading-7 text-slate-700">
@@ -235,26 +235,26 @@ export function AlbumDetailPage({ albumId }: AlbumDetailPageProps) {
 
           {status === 'loading' ? (
             <div
-              className="rounded-md border border-line bg-white px-5 py-6 text-sm text-slate-700 shadow-sm"
+              className="rounded-xl border border-line bg-white px-5 py-6 text-sm text-slate-700"
               role="status"
             >
-              Loading album details...
+              Carregando detalhes do álbum...
             </div>
           ) : null}
 
           {status === 'error' ? (
             <div
-              className="rounded-md border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-800"
+              className="rounded-xl border border-danger bg-danger px-5 py-4 text-sm text-white"
               role="alert"
             >
-              <p className="font-semibold">Album could not be loaded</p>
+              <p className="font-semibold">Não foi possível carregar o álbum</p>
               <p className="mt-1">{errorMessage}</p>
               <button
                 type="button"
-                className="mt-4 min-h-11 rounded-md border border-red-300 bg-white px-4 py-2 text-sm font-semibold text-red-800 transition hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-700 focus:ring-offset-2"
+                className="mt-4 min-h-11 rounded-lg bg-white px-4 py-2 text-sm font-semibold text-danger transition hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-danger"
                 onClick={() => void loadAlbum()}
               >
-                Try again
+                Tentar novamente
               </button>
             </div>
           ) : null}

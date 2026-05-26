@@ -18,10 +18,10 @@ interface StickerQuantityListProps {
 }
 
 const statusClasses: Record<CollectionSearchStatus, string> = {
-  duplicate: 'border-amber-300 bg-amber-50 text-amber-950',
-  missing: 'border-red-200 bg-red-50 text-red-900',
+  duplicate: 'border-danger bg-danger text-white',
+  missing: 'border-danger bg-danger text-white',
   not_found: 'border-slate-300 bg-slate-50 text-slate-800',
-  owned: 'border-emerald-300 bg-emerald-50 text-emerald-950'
+  owned: 'border-ocean bg-ocean text-white'
 };
 
 export function StickerQuantityList({
@@ -38,22 +38,22 @@ export function StickerQuantityList({
       : stickers.filter((sticker) => sticker.sectionId === selectedSectionId);
 
   return (
-    <section className="rounded-md border border-line bg-white shadow-sm">
+    <section className="rounded-xl border border-line bg-white">
       <div className="flex flex-col gap-3 border-b border-line px-5 py-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h2 className="text-lg font-semibold">Sticker quantities</h2>
+          <h2 className="text-lg font-semibold">Quantidades de figurinhas</h2>
           <p className="mt-1 text-sm text-slate-600">
-            Set total owned copies for each sticker.
+            Defina o total de cópias que você possui de cada figurinha.
           </p>
         </div>
         <label className="flex min-w-48 flex-col gap-2 text-sm font-medium">
-          Section
+          Seção
           <select
-            className="min-h-11 rounded-md border border-line bg-white px-3 py-2 text-sm outline-none transition focus:border-ocean focus:ring-2 focus:ring-ocean/25"
+            className="min-h-11 rounded-lg border border-line bg-white px-3 py-2 text-sm outline-none transition focus:border-ocean focus:ring-2 focus:ring-ocean/25"
             value={selectedSectionId}
             onChange={(event) => onChangeSection(event.target.value)}
           >
-            <option value="all">All sections</option>
+            <option value="all">Todas as seções</option>
             {sections.map((section) => (
               <option key={section.id} value={section.id}>
                 {section.name}
@@ -66,7 +66,7 @@ export function StickerQuantityList({
       <div className="divide-y divide-line">
         {filteredStickers.length === 0 ? (
           <p className="px-5 py-6 text-sm text-slate-600">
-            No stickers in this section.
+            Nenhuma figurinha nesta seção.
           </p>
         ) : (
           filteredStickers.map((sticker) => (
@@ -76,32 +76,33 @@ export function StickerQuantityList({
             >
               <div>
                 <div className="flex flex-wrap items-center gap-2">
-                  <h3 className="font-mono text-base font-semibold">
+                  <h3 className="text-base font-semibold">
                     {sticker.code}
                   </h3>
                   <span
-                    className={`rounded border px-2 py-1 text-xs font-semibold ${statusClasses[sticker.status]}`}
+                    className={`rounded-lg border px-2 py-1 text-xs font-semibold ${statusClasses[sticker.status]}`}
                   >
                     {getStatusLabel(sticker.status)}
                   </span>
                   {updatingStickerId === sticker.id ? (
                     <span className="text-xs font-medium text-slate-600">
-                      Updating...
+                      Atualizando...
                     </span>
                   ) : null}
                 </div>
                 <p className="mt-1 text-sm text-slate-600">
-                  {sticker.title ?? 'Untitled sticker'} · {sticker.sectionName}
+                  {sticker.title ?? 'Figurinha sem título'} ·{' '}
+                  {sticker.sectionName}
                   {sticker.duplicateCount > 0
-                    ? ` · ${sticker.duplicateCount} available to trade`
+                    ? ` · ${sticker.duplicateCount} disponíveis para troca`
                     : ''}
                 </p>
               </div>
 
               <label className="flex items-center gap-2 text-sm font-medium sm:justify-end">
-                Quantity
+                Quantidade
                 <input
-                  className="h-11 w-24 rounded-md border border-line bg-white px-3 py-2 text-center text-base font-semibold outline-none transition focus:border-ocean focus:ring-2 focus:ring-ocean/25"
+                  className="h-11 w-24 rounded-lg border border-line bg-white px-3 py-2 text-center text-base font-semibold outline-none transition focus:border-ocean focus:ring-2 focus:ring-ocean/25"
                   min={0}
                   type="number"
                   value={sticker.quantityTotal}

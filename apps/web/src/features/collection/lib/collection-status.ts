@@ -32,10 +32,10 @@ export const getStickerStatus = (quantityTotal: number): StickerStatus => {
 
 export const getStatusLabel = (status: CollectionSearchStatus): string => {
   const labels: Record<CollectionSearchStatus, string> = {
-    duplicate: 'Repeated',
-    missing: 'Missing',
-    not_found: 'Not in this album',
-    owned: 'Owned'
+    duplicate: 'Repetida',
+    missing: 'Faltando',
+    not_found: 'Não está neste álbum',
+    owned: 'Tenho'
   };
 
   return labels[status];
@@ -73,7 +73,7 @@ export const createStickerViews = (input: {
 
     return {
       ...sticker,
-      sectionName: sectionNames.get(sticker.sectionId) ?? 'Unassigned section',
+      sectionName: sectionNames.get(sticker.sectionId) ?? 'Seção não atribuída',
       quantityTotal,
       duplicateCount: getDuplicateCount(quantityTotal),
       status: getStickerStatus(quantityTotal)

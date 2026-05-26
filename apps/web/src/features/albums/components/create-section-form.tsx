@@ -35,11 +35,11 @@ export function CreateSectionForm({
   const normalizedCode = useMemo(() => code.trim().toUpperCase(), [code]);
 
   const validateForm = (): readonly string[] => [
-    ...(name.trim().length > 0 ? [] : ['Section name is required.']),
-    ...(normalizedCode.length > 0 ? [] : ['Section code is required.']),
+    ...(name.trim().length > 0 ? [] : ['Nome da seção é obrigatório.']),
+    ...(normalizedCode.length > 0 ? [] : ['Código da seção é obrigatório.']),
     ...(Number.isInteger(Number(sortOrder)) && Number(sortOrder) >= 0
       ? []
-      : ['Section order must be a non-negative integer.'])
+      : ['A ordem da seção deve ser um número inteiro maior ou igual a zero.'])
   ];
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -68,7 +68,7 @@ export function CreateSectionForm({
       setCode('');
       setKind('team');
       setSortOrder(String(section.sortOrder + 10));
-      setSuccessMessage(`${section.name} was added.`);
+      setSuccessMessage(`${section.name} foi adicionada.`);
     } catch (error) {
       setErrors(getCatalogErrors(error));
     }
@@ -76,22 +76,22 @@ export function CreateSectionForm({
 
   return (
     <form
-      className="rounded-md border border-line bg-white p-5 shadow-sm"
+      className="rounded-xl border border-line bg-white p-5"
       onSubmit={(event) => void handleSubmit(event)}
     >
       <div className="mb-5">
-        <h2 className="text-lg font-semibold">Create section</h2>
+        <h2 className="text-lg font-semibold">Criar seção</h2>
         <p className="mt-1 text-sm leading-6 text-slate-600">
-          Use short codes that match the printed album groups.
+          Use códigos curtos que correspondam aos grupos impressos no álbum.
         </p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-4">
         <div className="md:col-span-2">
-          <Field label="Section name">
+          <Field label="Nome da seção">
             <TextInput
               autoComplete="off"
-              placeholder="Brazil"
+              placeholder="Brasil"
               value={name}
               onChange={(event) => setName(event.target.value)}
             />
@@ -99,8 +99,8 @@ export function CreateSectionForm({
         </div>
 
         <Field
-          label="Section code"
-          hint={normalizedCode ? `Preview: ${normalizedCode}` : undefined}
+          label="Código da seção"
+          hint={normalizedCode ? `Prévia: ${normalizedCode}` : undefined}
         >
           <TextInput
             autoComplete="off"
@@ -110,7 +110,7 @@ export function CreateSectionForm({
           />
         </Field>
 
-        <Field label="Order">
+        <Field label="Ordem">
           <TextInput
             inputMode="numeric"
             min={0}
@@ -122,16 +122,16 @@ export function CreateSectionForm({
       </div>
 
       <div className="mt-4 max-w-xs">
-        <Field label="Type">
+        <Field label="Tipo">
           <SelectInput
             value={kind}
             onChange={(event) =>
               setKind(event.target.value as AlbumSectionSummary['kind'])
             }
           >
-            <option value="team">Team</option>
-            <option value="tournament">Tournament</option>
-            <option value="custom">Custom</option>
+            <option value="team">Time</option>
+            <option value="tournament">Torneio</option>
+            <option value="custom">Personalizada</option>
           </SelectInput>
         </Field>
       </div>
@@ -140,10 +140,10 @@ export function CreateSectionForm({
         <FormFeedback errors={errors} successMessage={successMessage} />
         <button
           type="submit"
-          className="min-h-11 rounded-md bg-ocean px-4 py-2 text-sm font-semibold text-white transition hover:bg-teal-800 focus:outline-none focus:ring-2 focus:ring-ocean focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+          className="min-h-11 rounded-lg bg-gold px-4 py-2 text-sm font-semibold text-dark transition hover:bg-amber-500 focus:outline-none focus:ring-2 focus:ring-gold focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
           disabled={isDisabled || isSubmitting}
         >
-          {isSubmitting ? 'Creating...' : 'Create section'}
+          {isSubmitting ? 'Criando...' : 'Criar seção'}
         </button>
       </div>
     </form>
