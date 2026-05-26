@@ -29,10 +29,11 @@ export function AuthenticatedShell({ children }: AuthenticatedShellProps) {
           >
             <Image
               priority
-              src="/favicon.svg"
+              className="h-12 w-12 object-contain"
+              src="/icon.png"
               alt=""
-              width={36}
-              height={36}
+              width={1024}
+              height={1024}
               aria-hidden="true"
             />
             <span>Álbum Cheio</span>
