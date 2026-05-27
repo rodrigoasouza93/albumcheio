@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { SupabaseApiError } from '../supabase/supabase-api.error.js';
 import type { MetricsService } from '../observability/metrics.service.js';
+import type { StructuredLoggerService } from '../observability/structured-logger.service.js';
 import type { CollectionsRepository } from './data/collections.repository.js';
 import { CollectionsService } from './collections.service.js';
 
@@ -51,20 +52,35 @@ const itemRow = {
 
 const createMetricsService = () => {
   const observeProgressCalculation = vi.fn();
+  const observeCollectionStickerList = vi.fn();
   const recordCollectionUpdate = vi.fn();
   const recordStickerSearch = vi.fn();
 
   return {
     service: {
       observeProgressCalculation,
+      observeCollectionStickerList,
       recordCollectionUpdate,
       recordStickerSearch
     } as unknown as MetricsService,
     observeProgressCalculation,
+    observeCollectionStickerList,
     recordCollectionUpdate,
     recordStickerSearch
   };
 };
+
+const createLogger = () =>
+  ({
+    logCollectionStickerList: vi.fn()
+  }) as unknown as StructuredLoggerService;
+
+const createService = (
+  repository: CollectionsRepository,
+  metricsService: MetricsService,
+  logger = createLogger()
+): CollectionsService =>
+  new CollectionsService(repository, metricsService, logger);
 
 describe('CollectionsService', () => {
   it('sets quantity and derives owned and duplicate state', async () => {
@@ -74,7 +90,7 @@ describe('CollectionsService', () => {
     } as unknown as CollectionsRepository;
     const { recordCollectionUpdate, service: metricsService } =
       createMetricsService();
-    const service = new CollectionsService(repository, metricsService);
+    const service = createService(repository, metricsService);
 
     const item = await service.setStickerQuantity({
       accessToken,
@@ -110,7 +126,7 @@ describe('CollectionsService', () => {
     } as unknown as CollectionsRepository;
     const { recordStickerSearch, service: metricsService } =
       createMetricsService();
-    const service = new CollectionsService(repository, metricsService);
+    const service = createService(repository, metricsService);
 
     const missing = await service.searchSticker({
       accessToken,
@@ -156,7 +172,7 @@ describe('CollectionsService', () => {
     } as unknown as CollectionsRepository;
     const { observeProgressCalculation, service: metricsService } =
       createMetricsService();
-    const service = new CollectionsService(repository, metricsService);
+    const service = createService(repository, metricsService);
 
     const progress = await service.getAlbumProgress({
       accessToken,
@@ -187,6 +203,93 @@ describe('CollectionsService', () => {
     );
   });
 
+  it('lists collection stickers with quantities and section metrics', async () => {
+    const getAlbumSection = vi.fn().mockResolvedValue(sectionRow);
+    const listCollectionStickers = vi
+      .fn()
+      .mockResolvedValue([stickerRow, secondStickerRow]);
+    const listCollectionItemsByStickerIds = vi
+      .fn()
+      .mockResolvedValue([itemRow]);
+    const repository = {
+      getAlbumSection,
+      listCollectionStickers,
+      listCollectionItemsByStickerIds
+    } as unknown as CollectionsRepository;
+    const { observeCollectionStickerList, service: metricsService } =
+      createMetricsService();
+    const logCollectionStickerList = vi.fn();
+    const logger = {
+      logCollectionStickerList
+    } as unknown as StructuredLoggerService;
+    const service = createService(repository, metricsService, logger);
+
+    const page = await service.listCollectionStickers({
+      accessToken,
+      userId,
+      query: {
+        albumId,
+        sectionId,
+        limit: 10,
+        offset: 0
+      }
+    });
+
+    expect(page.items).toEqual([
+      expect.objectContaining({
+        id: 'sticker-id',
+        quantityTotal: 3,
+        owned: true,
+        duplicateCount: 2,
+        status: 'duplicate'
+      }),
+      expect.objectContaining({
+        id: 'second-sticker-id',
+        quantityTotal: 0,
+        owned: false,
+        duplicateCount: 0,
+        status: 'missing'
+      })
+    ]);
+    expect(page).toMatchObject({
+      limit: 10,
+      offset: 0
+    });
+    expect(getAlbumSection).toHaveBeenCalledWith({
+      accessToken,
+      albumId,
+      sectionId
+    });
+    expect(listCollectionStickers).toHaveBeenCalledWith(
+      accessToken,
+      {
+        albumId,
+        sectionId,
+        limit: 10,
+        offset: 0
+      }
+    );
+    expect(listCollectionItemsByStickerIds).toHaveBeenCalledWith({
+      accessToken,
+      userId,
+      stickerIds: ['sticker-id', 'second-sticker-id']
+    });
+    expect(observeCollectionStickerList).toHaveBeenCalledWith(
+      expect.objectContaining({
+        scope: 'section',
+        outcome: 'success'
+      })
+    );
+    expect(logCollectionStickerList).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId,
+        albumId,
+        sectionId,
+        itemsCount: 2
+      })
+    );
+  });
+
   it('lists paginated missing and duplicate stickers', async () => {
     const repository = {
       listAlbumStickers: vi
@@ -195,7 +298,7 @@ describe('CollectionsService', () => {
       listAlbumCollectionItems: vi.fn().mockResolvedValue([itemRow])
     } as unknown as CollectionsRepository;
     const { service: metricsService } = createMetricsService();
-    const service = new CollectionsService(repository, metricsService);
+    const service = createService(repository, metricsService);
 
     const missing = await service.listMissing({
       accessToken,
@@ -240,7 +343,7 @@ describe('CollectionsService', () => {
     } as unknown as CollectionsRepository;
     const { recordCollectionUpdate, service: metricsService } =
       createMetricsService();
-    const service = new CollectionsService(repository, metricsService);
+    const service = createService(repository, metricsService);
 
     await expect(
       service.setStickerQuantity({

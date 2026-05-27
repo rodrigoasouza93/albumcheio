@@ -34,6 +34,11 @@ describe('MetricsService', () => {
       outcome: 'success',
       durationSeconds: 0.015
     });
+    metrics.observeCollectionStickerList({
+      scope: 'section',
+      outcome: 'success',
+      durationSeconds: 0.025
+    });
 
     const output = metrics.renderPrometheusMetrics();
 
@@ -57,6 +62,12 @@ describe('MetricsService', () => {
     );
     expect(output).toContain(
       'progress_calculation_duration_seconds_count{outcome="success"} 1'
+    );
+    expect(output).toContain(
+      'collection_sticker_list_total{scope="section",outcome="success"} 1'
+    );
+    expect(output).toContain(
+      'collection_sticker_list_duration_seconds_count{scope="section",outcome="success"} 1'
     );
     expect(output).not.toContain('password');
     expect(output).not.toContain('access-token');

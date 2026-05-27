@@ -77,4 +77,15 @@ describe('collection validation', () => {
       offset: 10
     });
   });
+
+  it('rejects invalid section identifiers', () => {
+    expect(() =>
+      parseCollectionPageQuery(
+        {
+          sectionId: 'not-a-uuid'
+        },
+        albumId
+      )
+    ).toThrow(UnprocessableEntityException);
+  });
 });

@@ -192,6 +192,19 @@ export class MetricsService {
     buckets: DEFAULT_BUCKETS
   });
 
+  private readonly collectionStickerListTotal = new CounterMetric({
+    name: 'collection_sticker_list_total',
+    help: 'Collection sticker list attempts grouped by scope and outcome.',
+    labelNames: ['scope', 'outcome']
+  });
+
+  private readonly collectionStickerListDurationSeconds = new HistogramMetric({
+    name: 'collection_sticker_list_duration_seconds',
+    help: 'Collection sticker list duration in seconds.',
+    labelNames: ['scope', 'outcome'],
+    buckets: DEFAULT_BUCKETS
+  });
+
   private readonly catalogAdminMutationsTotal = new CounterMetric({
     name: 'catalog_admin_mutations_total',
     help: 'Administrative catalog mutations grouped by resource, action, and outcome.',
@@ -248,6 +261,23 @@ export class MetricsService {
     );
   }
 
+  public observeCollectionStickerList(input: {
+    readonly scope: string;
+    readonly outcome: string;
+    readonly durationSeconds: number;
+  }): void {
+    const labels = {
+      scope: input.scope,
+      outcome: input.outcome
+    };
+
+    this.collectionStickerListTotal.increment(labels);
+    this.collectionStickerListDurationSeconds.observe(
+      labels,
+      input.durationSeconds
+    );
+  }
+
   public recordCatalogAdminMutation(input: {
     readonly resource: string;
     readonly action: string;
@@ -280,6 +310,8 @@ export class MetricsService {
       this.collectionUpdatesTotal.render(),
       this.stickerSearchTotal.render(),
       this.progressCalculationDurationSeconds.render(),
+      this.collectionStickerListTotal.render(),
+      this.collectionStickerListDurationSeconds.render(),
       this.catalogAdminMutationsTotal.render(),
       this.catalogAuthorizationDenialsTotal.render(),
       this.catalogAlbumReadsTotal.render()

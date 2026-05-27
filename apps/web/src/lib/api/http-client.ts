@@ -6,6 +6,7 @@ import type {
   AlbumSummary,
   AuthSession,
   CollectionItemSummary,
+  CollectionStickerPage,
   CreateAlbumInput,
   CreateAlbumSectionInput,
   CreateStickerInput,
@@ -273,6 +274,25 @@ export const getAlbumProgress = (input: {
   requestApi<AlbumProgress>(`/albums/${input.albumId}/progress`, {
     token: input.token
   });
+
+export const listCollectionStickers = (input: {
+  readonly token: string;
+  readonly albumId: string;
+  readonly sectionId?: string;
+  readonly limit: number;
+  readonly offset: number;
+}): Promise<CollectionStickerPage> =>
+  requestApi<CollectionStickerPage>(
+    `/albums/${input.albumId}/collection/stickers`,
+    {
+      token: input.token,
+      query: {
+        sectionId: input.sectionId,
+        limit: input.limit,
+        offset: input.offset
+      }
+    }
+  );
 
 export const listMissingStickers = (input: {
   readonly token: string;

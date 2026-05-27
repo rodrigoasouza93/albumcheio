@@ -123,6 +123,13 @@ export interface StickerCollectionStatus {
   readonly duplicateCount: number;
 }
 
+export interface CollectionStickerSummary extends StickerSummary {
+  readonly quantityTotal: number;
+  readonly owned: boolean;
+  readonly duplicateCount: number;
+  readonly status: Exclude<CollectionSearchStatus, 'not_found'>;
+}
+
 export interface SectionProgress {
   readonly sectionId: string;
   readonly sectionCode: string;
@@ -160,6 +167,12 @@ export interface MissingStickerPage {
 
 export interface DuplicateStickerPage {
   readonly items: readonly DuplicateStickerSummary[];
+  readonly limit: number;
+  readonly offset: number;
+}
+
+export interface CollectionStickerPage {
+  readonly items: readonly CollectionStickerSummary[];
   readonly limit: number;
   readonly offset: number;
 }

@@ -243,6 +243,23 @@ export class SupabaseClient {
     });
   }
 
+  public async getAlbumSection(input: {
+    readonly albumId: string;
+    readonly sectionId: string;
+  }): Promise<SupabaseAlbumSectionRow> {
+    const query = new URLSearchParams({
+      id: `eq.${input.sectionId}`,
+      album_id: `eq.${input.albumId}`,
+      select: SECTION_SELECT
+    });
+    const sections = await this.request<readonly SupabaseAlbumSectionRow[]>({
+      method: 'GET',
+      path: `/rest/v1/album_sections?${query.toString()}`
+    });
+
+    return this.requireSingleRow(sections, 'Album section not found');
+  }
+
   public async updateAlbumSection(input: {
     readonly albumId: string;
     readonly sectionId: string;
@@ -473,6 +490,30 @@ export class SupabaseClient {
     });
   }
 
+  public async listCollectionStickers(input: {
+    readonly albumId: string;
+    readonly sectionId?: string;
+    readonly limit: number;
+    readonly offset: number;
+  }): Promise<readonly SupabaseStickerRow[]> {
+    const query = new URLSearchParams({
+      album_id: `eq.${input.albumId}`,
+      select: STICKER_SELECT,
+      order: 'sort_order.asc,id.asc',
+      limit: String(input.limit),
+      offset: String(input.offset)
+    });
+
+    if (input.sectionId) {
+      query.set('section_id', `eq.${input.sectionId}`);
+    }
+
+    return this.request<readonly SupabaseStickerRow[]>({
+      method: 'GET',
+      path: `/rest/v1/stickers?${query.toString()}`
+    });
+  }
+
   public async listAlbumCollectionItems(input: {
     readonly userId: string;
     readonly albumId: string;
@@ -481,6 +522,27 @@ export class SupabaseClient {
       user_id: `eq.${input.userId}`,
       select: `${COLLECTION_ITEM_SELECT},stickers!inner(album_id)`,
       'stickers.album_id': `eq.${input.albumId}`,
+      order: 'sticker_id.asc'
+    });
+
+    return this.request<readonly SupabaseCollectionItemRow[]>({
+      method: 'GET',
+      path: `/rest/v1/collection_items?${query.toString()}`
+    });
+  }
+
+  public async listCollectionItemsByStickerIds(input: {
+    readonly userId: string;
+    readonly stickerIds: readonly string[];
+  }): Promise<readonly SupabaseCollectionItemRow[]> {
+    if (input.stickerIds.length === 0) {
+      return [];
+    }
+
+    const query = new URLSearchParams({
+      user_id: `eq.${input.userId}`,
+      sticker_id: `in.(${input.stickerIds.join(',')})`,
+      select: COLLECTION_ITEM_SELECT,
       order: 'sticker_id.asc'
     });
 

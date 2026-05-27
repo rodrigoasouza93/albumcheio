@@ -12,6 +12,7 @@ interface StickerQuantityListProps {
   readonly sections: readonly AlbumSectionSummary[];
   readonly stickers: readonly StickerCollectionView[];
   readonly selectedSectionId: string;
+  readonly status: 'idle' | 'loading' | 'ready';
   readonly updatingStickerId: string | null;
   readonly onChangeSection: (sectionId: string) => void;
   readonly onSetQuantity: (stickerId: string, quantityTotal: number) => void;
@@ -24,18 +25,40 @@ const statusClasses: Record<CollectionSearchStatus, string> = {
   owned: 'border-ocean bg-ocean text-white'
 };
 
+const getFilteredStickers = (
+  stickers: readonly StickerCollectionView[],
+  selectedSectionId: string
+): readonly StickerCollectionView[] => {
+  if (!selectedSectionId) {
+    return [];
+  }
+
+  return selectedSectionId === 'all'
+    ? stickers
+    : stickers.filter((sticker) => sticker.sectionId === selectedSectionId);
+};
+
+const getSortedSections = (
+  sections: readonly AlbumSectionSummary[]
+): readonly AlbumSectionSummary[] =>
+  [...sections].sort(
+    (left, right) =>
+      left.sortOrder - right.sortOrder || left.name.localeCompare(right.name)
+  );
+
 export function StickerQuantityList({
   sections,
   stickers,
   selectedSectionId,
+  status,
   updatingStickerId,
   onChangeSection,
   onSetQuantity
 }: StickerQuantityListProps) {
-  const filteredStickers =
-    selectedSectionId === 'all'
-      ? stickers
-      : stickers.filter((sticker) => sticker.sectionId === selectedSectionId);
+  const filteredStickers = getFilteredStickers(stickers, selectedSectionId);
+  const sortedSections = getSortedSections(sections);
+  const isSelectionPending = !selectedSectionId;
+  const isLoading = status === 'loading';
 
   return (
     <section className="rounded-xl border border-line bg-white">
@@ -53,20 +76,29 @@ export function StickerQuantityList({
             value={selectedSectionId}
             onChange={(event) => onChangeSection(event.target.value)}
           >
-            <option value="all">Todas as seções</option>
-            {sections.map((section) => (
+            <option value="">Selecione uma seção</option>
+            {sortedSections.map((section) => (
               <option key={section.id} value={section.id}>
                 {section.name}
               </option>
             ))}
+            <option value="all">Todas as seções</option>
           </select>
         </label>
       </div>
 
       <div className="divide-y divide-line">
-        {filteredStickers.length === 0 ? (
+        {isLoading ? (
+          <p className="px-5 py-6 text-sm text-slate-600" role="status">
+            Carregando figurinhas da seção...
+          </p>
+        ) : isSelectionPending ? (
           <p className="px-5 py-6 text-sm text-slate-600">
-            Nenhuma figurinha nesta seção.
+            Selecione uma seção para carregar as figurinhas.
+          </p>
+        ) : filteredStickers.length === 0 ? (
+          <p className="px-5 py-6 text-sm text-slate-600">
+            Nenhuma figurinha encontrada neste filtro.
           </p>
         ) : (
           filteredStickers.map((sticker) => (

@@ -62,4 +62,37 @@ describe('StructuredLoggerService', () => {
     expect(loggedLine).not.toContain('access-token');
     expect(loggedLine).not.toContain('password');
   });
+
+  it('writes collection sticker list events without tokens', () => {
+    let loggedLine: unknown;
+    const consoleSpy = vi.spyOn(console, 'log').mockImplementation((line) => {
+      loggedLine = line;
+    });
+    const logger = new StructuredLoggerService();
+
+    logger.logCollectionStickerList({
+      userId: 'user-id',
+      albumId: 'album-id',
+      sectionId: 'section-id',
+      limit: 25,
+      offset: 50,
+      itemsCount: 10,
+      durationMs: 12.8
+    });
+
+    expect(consoleSpy).toHaveBeenCalledTimes(1);
+    expect(typeof loggedLine).toBe('string');
+    expect(JSON.parse(loggedLine)).toMatchObject({
+      level: 'info',
+      event: 'collection_sticker_list',
+      userId: 'user-id',
+      albumId: 'album-id',
+      sectionId: 'section-id',
+      limit: 25,
+      offset: 50,
+      itemsCount: 10,
+      durationMs: 13
+    });
+    expect(loggedLine).not.toContain('access-token');
+  });
 });

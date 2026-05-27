@@ -57,6 +57,13 @@ const section = {
   createdAt: timestamp,
   updatedAt: timestamp
 } as const;
+const secondSection = {
+  ...section,
+  id: 'second-section-id',
+  name: 'Argentina',
+  code: 'ARG',
+  sortOrder: 20
+} as const;
 const firstSticker = {
   id: 'sticker-owned',
   albumId: album.id,
@@ -78,6 +85,15 @@ const secondSticker = {
   sortOrder: 20,
   createdAt: timestamp,
   updatedAt: timestamp
+};
+const thirdSticker = {
+  ...secondSticker,
+  id: 'sticker-argentina',
+  sectionId: secondSection.id,
+  code: 'ARG01',
+  number: 3,
+  title: 'Escudo da Argentina',
+  sortOrder: 30
 };
 const createdSticker = {
   ...firstSticker,
@@ -182,7 +198,7 @@ const mockApi = async (
       await fulfillJson(route, {
         ...album,
         status: albumStatus,
-        sections: [section]
+        sections: [section, secondSection]
       });
       return;
     }
@@ -204,7 +220,39 @@ const mockApi = async (
 
     if (path === `/albums/${album.id}/stickers` && request.method() === 'GET') {
       await fulfillJson(route, {
-        items: [firstSticker, secondSticker],
+        items: [firstSticker, secondSticker, thirdSticker],
+        limit: 100,
+        offset: 0
+      });
+      return;
+    }
+
+    if (path === `/albums/${album.id}/collection/stickers`) {
+      const sectionId = url.searchParams.get('sectionId');
+      const stickers =
+        sectionId === section.id
+          ? [firstSticker, secondSticker]
+          : sectionId === secondSection.id
+            ? [thirdSticker]
+            : [firstSticker, secondSticker, thirdSticker];
+
+      await fulfillJson(route, {
+        items: stickers.map((sticker) => {
+          const quantityTotal = quantities.get(sticker.id) ?? 0;
+
+          return {
+            ...sticker,
+            quantityTotal,
+            owned: quantityTotal > 0,
+            duplicateCount: Math.max(quantityTotal - 1, 0),
+            status:
+              quantityTotal === 0
+                ? 'missing'
+                : quantityTotal > 1
+                  ? 'duplicate'
+                  : 'owned'
+          };
+        }),
         limit: 100,
         offset: 0
       });
@@ -285,8 +333,18 @@ const mockApi = async (
     }
 
     if (path === `/albums/${album.id}/missing`) {
+      const sectionId = url.searchParams.get('sectionId');
+      const missingStickers =
+        sectionId === section.id
+          ? [secondSticker]
+          : sectionId === secondSection.id
+            ? [thirdSticker]
+            : [secondSticker, thirdSticker];
+
       await fulfillJson(route, {
-        items: quantities.get(secondSticker.id) === 0 ? [secondSticker] : [],
+        items: missingStickers.filter(
+          (sticker) => (quantities.get(sticker.id) ?? 0) === 0
+        ),
         limit: 100,
         offset: 0
       });
@@ -294,14 +352,16 @@ const mockApi = async (
     }
 
     if (path === `/albums/${album.id}/duplicates`) {
+      const sectionId = url.searchParams.get('sectionId');
+      const duplicateStickers =
+        sectionId === section.id || sectionId === null ? [firstSticker] : [];
+
       await fulfillJson(route, {
-        items: [
-          {
-            ...firstSticker,
-            quantityTotal: quantities.get(firstSticker.id) ?? 0,
-            duplicateCount: 1
-          }
-        ],
+        items: duplicateStickers.map((sticker) => ({
+          ...sticker,
+          quantityTotal: quantities.get(sticker.id) ?? 0,
+          duplicateCount: Math.max((quantities.get(sticker.id) ?? 0) - 1, 0)
+        })),
         limit: 100,
         offset: 0
       });
@@ -345,6 +405,9 @@ test('admin creates a draft catalog, publishes it, and unpublishes it', async ({
 
   await expect(page.getByRole('heading', { name: album.name })).toBeVisible();
   await expect(page.getByText('Status: Rascunho')).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: 'Resumo do catálogo' })
+  ).toBeVisible();
 
   await page.getByLabel('Nome da seção').fill(createdSection.name);
   await page.getByLabel('Código da seção').fill(createdSection.code);
@@ -388,8 +451,20 @@ test('common user consumes a published album and updates the collection', async 
   await expect(page.getByRole('heading', { name: album.name })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Publicar' })).toHaveCount(0);
   await expect(
+    page.getByRole('heading', { name: 'Resumo do catálogo' })
+  ).toHaveCount(0);
+  await expect(
     page.getByRole('heading', { name: 'Progresso da coleção' })
   ).toBeVisible();
+  await expect(
+    page.getByText('Selecione uma seção para carregar as figurinhas.')
+  ).toBeVisible();
+  await expect(
+    page.getByText('Selecione uma seção para carregar faltantes.')
+  ).toBeVisible();
+  await expect(
+    page.getByText(`${secondSticker.code} · ${secondSticker.title}`)
+  ).toHaveCount(0);
 
   const searchPanel = page.locator('form').filter({
     has: page.getByRole('button', { name: 'Buscar' })
@@ -399,6 +474,32 @@ test('common user consumes a published album and updates the collection', async 
   await searchPanel.getByRole('button', { name: 'Buscar' }).click();
   await expect(
     page.getByText(`Faltando · ${secondSticker.code}`)
+  ).toBeVisible();
+
+  const quantitySectionPicker = page.getByLabel('Seção').first();
+  await expect(quantitySectionPicker.locator('option')).toHaveText([
+    'Selecione uma seção',
+    section.name,
+    secondSection.name,
+    'Todas as seções'
+  ]);
+  await quantitySectionPicker.selectOption(section.id);
+  await expect(
+    page
+      .locator('article')
+      .filter({ hasText: secondSticker.code })
+      .getByText(secondSticker.title)
+  ).toBeVisible();
+  await expect(
+    page.locator('article').filter({ hasText: thirdSticker.code })
+  ).toHaveCount(0);
+
+  await page.getByLabel('Seção').nth(1).selectOption(section.id);
+  await expect(
+    page.getByText(`${secondSticker.code} · ${secondSticker.title}`)
+  ).toBeVisible();
+  await expect(
+    page.getByText(`${firstSticker.code} · ${firstSticker.title}`)
   ).toBeVisible();
 
   await page
@@ -428,7 +529,7 @@ test('unpublished albums leave existing collection access intact', async ({
     page.getByRole('heading', { name: 'Progresso da coleção' })
   ).toBeVisible();
   await expect(
-    page.getByText(`${secondSticker.code} · ${secondSticker.title}`)
+    page.getByText('Selecione uma seção para carregar as figurinhas.')
   ).toBeVisible();
 
   const searchPanel = page.locator('form').filter({
@@ -455,6 +556,17 @@ test('supports mobile missing, duplicate, code search, and navigation', async ({
   await expect(
     page.getByRole('heading', { name: 'Faltantes e repetidas' })
   ).toBeVisible();
+  await expect(
+    page.getByText('Selecione uma seção para carregar faltantes.')
+  ).toBeVisible();
+  await page.getByLabel('Seção').first().selectOption('all');
+  await expect(
+    page
+      .locator('article')
+      .filter({ hasText: thirdSticker.code })
+      .getByText(thirdSticker.title)
+  ).toBeVisible();
+  await page.getByLabel('Seção').nth(1).selectOption('all');
   await expect(
     page.getByText(`${secondSticker.code} · ${secondSticker.title}`)
   ).toBeVisible();

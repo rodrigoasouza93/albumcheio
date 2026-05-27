@@ -22,6 +22,16 @@ interface CatalogEventInput {
   readonly albumId?: string;
 }
 
+interface CollectionStickerListLogInput {
+  readonly userId: string;
+  readonly albumId: string;
+  readonly sectionId?: string;
+  readonly limit: number;
+  readonly offset: number;
+  readonly itemsCount: number;
+  readonly durationMs: number;
+}
+
 const SENSITIVE_KEY_PATTERN =
   /password|token|authorization|secret|apikey|api_key|service_role/i;
 
@@ -78,6 +88,19 @@ export class StructuredLoggerService {
       action: input.action,
       outcome: input.outcome,
       ...(input.albumId ? { albumId: input.albumId } : {})
+    });
+  }
+
+  public logCollectionStickerList(input: CollectionStickerListLogInput): void {
+    this.write('info', {
+      event: 'collection_sticker_list',
+      userId: input.userId,
+      albumId: input.albumId,
+      ...(input.sectionId ? { sectionId: input.sectionId } : {}),
+      limit: input.limit,
+      offset: input.offset,
+      itemsCount: input.itemsCount,
+      durationMs: Math.round(input.durationMs)
     });
   }
 
