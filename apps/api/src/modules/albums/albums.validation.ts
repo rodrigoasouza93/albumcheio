@@ -5,6 +5,7 @@ import {
 
 import type {
   AlbumStatus,
+  CatalogActor,
   AlbumSectionKind,
   CreateAlbumInput,
   CreateAlbumSectionInput,
@@ -24,6 +25,7 @@ const ALBUM_STATUSES = ['draft', 'published', 'archived'] as const;
 interface AuthenticatedInput {
   readonly userId: string;
   readonly accessToken: string;
+  readonly actor?: CatalogActor;
 }
 
 const assertRecord = (body: unknown): Record<string, unknown> => {
@@ -66,10 +68,8 @@ const getNumberField = (
   return typeof value === 'number' ? value : Number.NaN;
 };
 
-const hasField = (
-  body: Record<string, unknown>,
-  fieldName: string
-): boolean => Object.prototype.hasOwnProperty.call(body, fieldName);
+const hasField = (body: Record<string, unknown>, fieldName: string): boolean =>
+  Object.prototype.hasOwnProperty.call(body, fieldName);
 
 const throwValidationError = (errors: readonly string[]): never => {
   throw new UnprocessableEntityException({
@@ -148,7 +148,8 @@ export const parseCreateAlbumInput = (
 export const parseUpdateAlbumInput = (
   body: unknown,
   albumId: string,
-  accessToken: string
+  accessToken: string,
+  actor?: CatalogActor
 ): UpdateAlbumInput => {
   const record = assertRecord(body);
   const hasName = hasField(record, 'name');
@@ -165,13 +166,14 @@ export const parseUpdateAlbumInput = (
   ];
   const input = {
     accessToken,
+    ...(actor ? { actor } : {}),
     albumId,
     ...(hasName ? { name: name ?? '' } : {}),
     ...(hasEdition ? { edition } : {}),
     ...(hasDescription ? { description } : {})
   };
 
-  if (Object.keys(input).length === 2) {
+  if (Object.keys(input).length === (actor ? 3 : 2)) {
     errors.push('at least one album field must be provided');
   }
 
@@ -185,7 +187,8 @@ export const parseUpdateAlbumInput = (
 export const parseUpdateAlbumStatusInput = (
   body: unknown,
   albumId: string,
-  accessToken: string
+  accessToken: string,
+  actor?: CatalogActor
 ): UpdateAlbumStatusInput => {
   const record = assertRecord(body);
   const status = getRequiredStringField(record, 'status') as AlbumStatus;
@@ -196,6 +199,7 @@ export const parseUpdateAlbumStatusInput = (
 
   return {
     accessToken,
+    ...(actor ? { actor } : {}),
     albumId,
     status
   };
@@ -204,7 +208,8 @@ export const parseUpdateAlbumStatusInput = (
 export const parseCreateAlbumSectionInput = (
   body: unknown,
   albumId: string,
-  accessToken: string
+  accessToken: string,
+  actor?: CatalogActor
 ): CreateAlbumSectionInput => {
   const record = assertRecord(body);
   const name = getRequiredStringField(record, 'name');
@@ -226,6 +231,7 @@ export const parseCreateAlbumSectionInput = (
 
   return {
     accessToken,
+    ...(actor ? { actor } : {}),
     albumId,
     name,
     code,
@@ -238,7 +244,8 @@ export const parseUpdateAlbumSectionInput = (
   body: unknown,
   albumId: string,
   sectionId: string,
-  accessToken: string
+  accessToken: string,
+  actor?: CatalogActor
 ): UpdateAlbumSectionInput => {
   const record = assertRecord(body);
   const name = getOptionalStringField(record, 'name');
@@ -246,7 +253,8 @@ export const parseUpdateAlbumSectionInput = (
   const code = rawCode === null ? null : normalizeCatalogCode(rawCode);
   const rawKind = getOptionalStringField(record, 'kind');
   const kind = rawKind === null ? null : (rawKind as AlbumSectionKind);
-  const hasSortOrder = record.sortOrder !== undefined && record.sortOrder !== null;
+  const hasSortOrder =
+    record.sortOrder !== undefined && record.sortOrder !== null;
   const sortOrder = getNumberField(record, 'sortOrder', 0);
   const errors = [
     ...(name === '' ? ['name must not be blank'] : []),
@@ -260,6 +268,7 @@ export const parseUpdateAlbumSectionInput = (
   ];
   const input = {
     accessToken,
+    ...(actor ? { actor } : {}),
     albumId,
     sectionId,
     ...(name !== null ? { name } : {}),
@@ -268,7 +277,7 @@ export const parseUpdateAlbumSectionInput = (
     ...(hasSortOrder ? { sortOrder } : {})
   };
 
-  if (Object.keys(input).length === 3) {
+  if (Object.keys(input).length === (actor ? 4 : 3)) {
     errors.push('at least one section field must be provided');
   }
 

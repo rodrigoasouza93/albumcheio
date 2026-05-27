@@ -11,6 +11,7 @@ import {
 } from 'vitest';
 
 import { AppModule } from '../app.module.js';
+import { MetricsService } from '../observability/metrics.service.js';
 import type { SupabaseClient } from '../supabase/supabase-client.js';
 import { SupabaseService } from '../supabase/supabase.service.js';
 import { AlbumsController } from './albums.controller.js';
@@ -22,6 +23,10 @@ const user = {
   name: 'Admin User',
   role: 'admin',
   accessToken: 'access-token'
+};
+const actor = {
+  userId: user.id,
+  role: user.role
 };
 const albumId = '00000000-0000-4000-8000-000000000001';
 const sectionId = '00000000-0000-4000-8000-000000000101';
@@ -64,6 +69,7 @@ describe('catalog endpoints', () => {
   let app: INestApplication;
   let albumsController: AlbumsController;
   let stickersController: StickersController;
+  let metricsService: MetricsService;
   const userClient = {
     insertAlbum: vi.fn(),
     listAlbums: vi.fn(),
@@ -97,6 +103,7 @@ describe('catalog endpoints', () => {
     await app.init();
     albumsController = moduleRef.get(AlbumsController);
     stickersController = moduleRef.get(StickersController);
+    metricsService = moduleRef.get(MetricsService);
   });
 
   beforeEach(() => {
@@ -145,6 +152,7 @@ describe('catalog endpoints', () => {
     expect(sticker.code).toBe('BRA01');
     expect(userClient.insertSticker).toHaveBeenCalledWith({
       accessToken: 'access-token',
+      actor,
       albumId,
       sectionId,
       code: 'BRA01',
@@ -185,6 +193,9 @@ describe('catalog endpoints', () => {
       limit: 5,
       offset: 10
     });
+    expect(metricsService.renderPrometheusMetrics()).toContain(
+      'catalog_album_reads_total{status="draft",role="admin",outcome="success"}'
+    );
   });
 
   it('updates album, section, sticker and archives album through admin endpoints', async () => {
@@ -206,31 +217,39 @@ describe('catalog endpoints', () => {
 
     expect(userClient.updateAlbum).toHaveBeenCalledWith({
       accessToken: 'access-token',
+      actor,
       albumId,
       name: 'World Football Updated'
     });
     expect(userClient.updateAlbum).toHaveBeenCalledWith({
       accessToken: 'access-token',
+      actor,
       albumId,
       status: 'published'
     });
     expect(userClient.updateAlbumSection).toHaveBeenCalledWith({
       accessToken: 'access-token',
+      actor,
       albumId,
       sectionId,
       code: 'ARG'
     });
     expect(userClient.updateSticker).toHaveBeenCalledWith({
       accessToken: 'access-token',
+      actor,
       albumId,
       stickerId,
       code: 'ARG01'
     });
     expect(userClient.updateAlbum).toHaveBeenCalledWith({
       accessToken: 'access-token',
+      actor,
       albumId,
       status: 'archived'
     });
+    expect(metricsService.renderPrometheusMetrics()).toContain(
+      'catalog_admin_mutations_total{resource="album",action="status",outcome="success"}'
+    );
   });
 
   it('deletes sections and stickers through admin endpoints', async () => {
@@ -241,11 +260,13 @@ describe('catalog endpoints', () => {
 
     expect(userClient.deleteAlbumSection).toHaveBeenCalledWith({
       accessToken: 'access-token',
+      actor,
       albumId,
       sectionId
     });
     expect(userClient.deleteSticker).toHaveBeenCalledWith({
       accessToken: 'access-token',
+      actor,
       albumId,
       stickerId
     });

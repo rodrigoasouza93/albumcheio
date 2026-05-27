@@ -61,7 +61,11 @@ export class StickersController {
       parseCreateStickerInput(
         body,
         parseRequiredUuid(albumId, 'albumId'),
-        request.user.accessToken
+        request.user.accessToken,
+        {
+          userId: request.user.id,
+          role: request.user.role
+        }
       )
     );
   }
@@ -79,7 +83,11 @@ export class StickersController {
         body,
         parseRequiredUuid(albumId, 'albumId'),
         parseRequiredUuid(stickerId, 'stickerId'),
-        request.user.accessToken
+        request.user.accessToken,
+        {
+          userId: request.user.id,
+          role: request.user.role
+        }
       )
     );
   }
@@ -93,6 +101,10 @@ export class StickersController {
   ): Promise<void> {
     return this.stickersService.deleteSticker({
       accessToken: request.user.accessToken,
+      actor: {
+        userId: request.user.id,
+        role: request.user.role
+      },
       albumId: parseRequiredUuid(albumId, 'albumId'),
       stickerId: parseRequiredUuid(stickerId, 'stickerId')
     });

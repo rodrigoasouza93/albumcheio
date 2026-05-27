@@ -1,5 +1,7 @@
 # Tarefa 4.0: Implementar testes, observabilidade e validação E2E
 
+Status: concluída em 2026-05-26.
+
 ## Visão geral
 
 Consolidar a entrega com métricas, logs estruturados e cobertura de testes ponta a ponta para garantir que a separação admin/usuário comum funcione no fluxo real.
@@ -26,13 +28,13 @@ Consolidar a entrega com métricas, logs estruturados e cobertura de testes pont
 
 ## Subtarefas
 
-- [ ] 4.1 Adicionar métricas Prometheus previstas na Tech Spec.
-- [ ] 4.2 Adicionar logs estruturados para ações administrativas e bloqueios 403.
-- [ ] 4.3 Criar/ajustar fixtures ou seeds para admin, usuário comum e álbuns por status.
-- [ ] 4.4 Implementar E2E da jornada admin: draft, cadastro, publicação e despublicação.
-- [ ] 4.5 Implementar E2E da jornada usuário comum: consumo de álbum publicado e coleção.
-- [ ] 4.6 Implementar E2E de álbum despublicado com continuidade da coleção.
-- [ ] 4.7 Executar suíte relevante e registrar verificações nos documentos da tarefa.
+- [x] 4.1 Adicionar métricas Prometheus previstas na Tech Spec.
+- [x] 4.2 Adicionar logs estruturados para ações administrativas e bloqueios 403.
+- [x] 4.3 Criar/ajustar fixtures ou seeds para admin, usuário comum e álbuns por status.
+- [x] 4.4 Implementar E2E da jornada admin: draft, cadastro, publicação e despublicação.
+- [x] 4.5 Implementar E2E da jornada usuário comum: consumo de álbum publicado e coleção.
+- [x] 4.6 Implementar E2E de álbum despublicado com continuidade da coleção.
+- [x] 4.7 Executar suíte relevante e registrar verificações nos documentos da tarefa.
 
 ## Detalhes de implementação
 
@@ -47,10 +49,25 @@ Seguir `techspec.md`, principalmente "Monitoramento e observabilidade" e "Aborda
 
 ## Testes da tarefa
 
-- [ ] Testes unitários para métricas/logs quando aplicável.
-- [ ] Testes de integração para contadores e outcomes críticos.
-- [ ] Testes E2E com Playwright para admin, usuário comum e despublicação.
-- [ ] Execução consolidada da suíte relevante de API e web.
+- [x] Testes unitários para métricas/logs quando aplicável.
+- [x] Testes de integração para contadores e outcomes críticos.
+- [x] Testes E2E com Playwright para admin, usuário comum e despublicação.
+- [x] Execução consolidada da suíte relevante de API e web.
+
+## Implementação concluída
+
+- Adicionados os contadores Prometheus `catalog_admin_mutations_total`, `catalog_authorization_denials_total` e `catalog_album_reads_total`.
+- Adicionados logs estruturados para mutações administrativas, bloqueios 403 e leituras de catálogo, sem registrar tokens, senhas ou payloads de requisição.
+- Instrumentados `AdminGuard`, `AlbumsService` e `StickersService` para outcomes de sucesso/falha e contexto seguro de usuário, role, recurso, ação e álbum.
+- Ajustadas fixtures E2E com admin, usuário comum e álbum em `draft`/`published`.
+- Expandido Playwright para cobrir fluxo admin com cadastro, publicação e despublicação; fluxo de usuário comum em álbum publicado; e continuidade da coleção após álbum despublicado sair da listagem comum.
+
+## Verificações executadas
+
+- `pnpm --filter @albumcheio/api test` - 25 arquivos, 78 testes passando.
+- `pnpm --filter @albumcheio/web test` - 6 arquivos, 17 testes passando.
+- `pnpm --filter @albumcheio/api build` - build NestJS concluído com sucesso.
+- `pnpm exec playwright test tests/e2e/album-critical-flows.spec.ts` - 7 testes passando e 1 cenário mobile-only corretamente pulado no projeto desktop.
 
 ## Arquivos relevantes
 
@@ -58,8 +75,8 @@ Seguir `techspec.md`, principalmente "Monitoramento e observabilidade" e "Aborda
 - `apps/api/src/modules/observability/metrics.service.ts`
 - `apps/api/src/modules/observability/structured-logger.service.ts`
 - `apps/api/src/modules/observability/request-observability.middleware.ts`
+- `apps/api/src/modules/auth/admin.guard.ts`
+- `apps/api/src/modules/albums/albums.service.ts`
+- `apps/api/src/modules/stickers/stickers.service.ts`
 - `apps/api/src/modules/albums/catalog.integration.test.ts`
-- `apps/api/src/modules/collections/collections.integration.test.ts`
-- `apps/web/src/features/albums/components/albums-page.test.tsx`
-- `apps/web/src/features/albums/components/album-detail-page.test.tsx`
-- `apps/web/src/features/collection/components/collection-dashboard.test.tsx`
+- `tests/e2e/album-critical-flows.spec.ts`

@@ -141,7 +141,9 @@ const formatLabels = (
   }
 
   const formattedLabels = labelNames
-    .map((labelName) => `${labelName}="${escapeLabel(labels[labelName] ?? '')}"`)
+    .map(
+      (labelName) => `${labelName}="${escapeLabel(labels[labelName] ?? '')}"`
+    )
     .join(',');
 
   return `{${formattedLabels}}`;
@@ -190,6 +192,24 @@ export class MetricsService {
     buckets: DEFAULT_BUCKETS
   });
 
+  private readonly catalogAdminMutationsTotal = new CounterMetric({
+    name: 'catalog_admin_mutations_total',
+    help: 'Administrative catalog mutations grouped by resource, action, and outcome.',
+    labelNames: ['resource', 'action', 'outcome']
+  });
+
+  private readonly catalogAuthorizationDenialsTotal = new CounterMetric({
+    name: 'catalog_authorization_denials_total',
+    help: 'Catalog authorization denials grouped by resource, action, and user role.',
+    labelNames: ['resource', 'action', 'role']
+  });
+
+  private readonly catalogAlbumReadsTotal = new CounterMetric({
+    name: 'catalog_album_reads_total',
+    help: 'Catalog album read attempts grouped by album status, role, and outcome.',
+    labelNames: ['status', 'role', 'outcome']
+  });
+
   public recordHttpRequest(input: {
     readonly method: string;
     readonly route: string;
@@ -228,6 +248,30 @@ export class MetricsService {
     );
   }
 
+  public recordCatalogAdminMutation(input: {
+    readonly resource: string;
+    readonly action: string;
+    readonly outcome: string;
+  }): void {
+    this.catalogAdminMutationsTotal.increment(input);
+  }
+
+  public recordCatalogAuthorizationDenial(input: {
+    readonly resource: string;
+    readonly action: string;
+    readonly role: string;
+  }): void {
+    this.catalogAuthorizationDenialsTotal.increment(input);
+  }
+
+  public recordCatalogAlbumRead(input: {
+    readonly status: string;
+    readonly role: string;
+    readonly outcome: string;
+  }): void {
+    this.catalogAlbumReadsTotal.increment(input);
+  }
+
   public renderPrometheusMetrics(): string {
     return [
       this.httpRequestsTotal.render(),
@@ -235,7 +279,10 @@ export class MetricsService {
       this.authFailuresTotal.render(),
       this.collectionUpdatesTotal.render(),
       this.stickerSearchTotal.render(),
-      this.progressCalculationDurationSeconds.render()
+      this.progressCalculationDurationSeconds.render(),
+      this.catalogAdminMutationsTotal.render(),
+      this.catalogAuthorizationDenialsTotal.render(),
+      this.catalogAlbumReadsTotal.render()
     ].join('\n');
   }
 }

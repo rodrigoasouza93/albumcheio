@@ -15,6 +15,21 @@ describe('MetricsService', () => {
     metrics.recordAuthFailure('invalid_bearer_token');
     metrics.recordStickerSearch('missing');
     metrics.recordCollectionUpdate('success');
+    metrics.recordCatalogAdminMutation({
+      resource: 'album',
+      action: 'status',
+      outcome: 'success'
+    });
+    metrics.recordCatalogAuthorizationDenial({
+      resource: 'catalog',
+      action: 'admin_access',
+      role: 'user'
+    });
+    metrics.recordCatalogAlbumRead({
+      status: 'published',
+      role: 'user',
+      outcome: 'success'
+    });
     metrics.observeProgressCalculation({
       outcome: 'success',
       durationSeconds: 0.015
@@ -31,6 +46,15 @@ describe('MetricsService', () => {
     );
     expect(output).toContain('sticker_search_total{status="missing"} 1');
     expect(output).toContain('collection_updates_total{outcome="success"} 1');
+    expect(output).toContain(
+      'catalog_admin_mutations_total{resource="album",action="status",outcome="success"} 1'
+    );
+    expect(output).toContain(
+      'catalog_authorization_denials_total{resource="catalog",action="admin_access",role="user"} 1'
+    );
+    expect(output).toContain(
+      'catalog_album_reads_total{status="published",role="user",outcome="success"} 1'
+    );
     expect(output).toContain(
       'progress_calculation_duration_seconds_count{outcome="success"} 1'
     );

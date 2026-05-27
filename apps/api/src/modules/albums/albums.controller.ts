@@ -51,6 +51,8 @@ export class AlbumsController {
   ): Promise<AlbumPage> {
     return this.albumsService.listAlbums({
       accessToken: request.user.accessToken,
+      userId: request.user.id,
+      role: request.user.role,
       page: parsePageQuery(query)
     });
   }
@@ -64,7 +66,11 @@ export class AlbumsController {
     return this.albumsService.createAlbum(
       parseCreateAlbumInput(body, {
         userId: request.user.id,
-        accessToken: request.user.accessToken
+        accessToken: request.user.accessToken,
+        actor: {
+          userId: request.user.id,
+          role: request.user.role
+        }
       })
     );
   }
@@ -76,6 +82,8 @@ export class AlbumsController {
   ): Promise<AlbumDetail> {
     return this.albumsService.getAlbumDetail({
       accessToken: request.user.accessToken,
+      userId: request.user.id,
+      role: request.user.role,
       albumId: parseRequiredUuid(albumId, 'albumId')
     });
   }
@@ -91,7 +99,11 @@ export class AlbumsController {
       parseUpdateAlbumInput(
         body,
         parseRequiredUuid(albumId, 'albumId'),
-        request.user.accessToken
+        request.user.accessToken,
+        {
+          userId: request.user.id,
+          role: request.user.role
+        }
       )
     );
   }
@@ -104,6 +116,10 @@ export class AlbumsController {
   ): Promise<AlbumSummary> {
     return this.albumsService.archiveAlbum({
       accessToken: request.user.accessToken,
+      actor: {
+        userId: request.user.id,
+        role: request.user.role
+      },
       albumId: parseRequiredUuid(albumId, 'albumId')
     });
   }
@@ -119,7 +135,11 @@ export class AlbumsController {
       parseUpdateAlbumStatusInput(
         body,
         parseRequiredUuid(albumId, 'albumId'),
-        request.user.accessToken
+        request.user.accessToken,
+        {
+          userId: request.user.id,
+          role: request.user.role
+        }
       )
     );
   }
@@ -135,7 +155,11 @@ export class AlbumsController {
       parseCreateAlbumSectionInput(
         body,
         parseRequiredUuid(albumId, 'albumId'),
-        request.user.accessToken
+        request.user.accessToken,
+        {
+          userId: request.user.id,
+          role: request.user.role
+        }
       )
     );
   }
@@ -153,7 +177,11 @@ export class AlbumsController {
         body,
         parseRequiredUuid(albumId, 'albumId'),
         parseRequiredUuid(sectionId, 'sectionId'),
-        request.user.accessToken
+        request.user.accessToken,
+        {
+          userId: request.user.id,
+          role: request.user.role
+        }
       )
     );
   }
@@ -167,6 +195,10 @@ export class AlbumsController {
   ): Promise<void> {
     return this.albumsService.deleteSection({
       accessToken: request.user.accessToken,
+      actor: {
+        userId: request.user.id,
+        role: request.user.role
+      },
       albumId: parseRequiredUuid(albumId, 'albumId'),
       sectionId: parseRequiredUuid(sectionId, 'sectionId')
     });
