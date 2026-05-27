@@ -6,15 +6,25 @@ import { useCallback, useEffect, useState } from 'react';
 import { AuthenticatedShell } from '@web/features/auth/components/authenticated-shell';
 import { ProtectedRoute } from '@web/features/auth/components/protected-route';
 import { useSession } from '@web/features/auth/hooks/session-context';
-import type { AlbumSummary } from '@web/lib/api/api-types';
+import type { AlbumStatus, AlbumSummary } from '@web/lib/api/api-types';
 import { ApiError, createAlbum, listAlbums } from '@web/lib/api/http-client';
 
 import { CreateAlbumForm } from './create-album-form';
 
 const ALBUM_PAGE_LIMIT = 50;
 
+const albumStatusLabels: Readonly<Record<AlbumStatus, string>> = {
+  draft: 'Rascunho',
+  published: 'Publicado',
+  archived: 'Arquivado'
+};
+
 const getAlbumsErrorMessage = (error: unknown): string => {
   if (error instanceof ApiError) {
+    if (error.status === 403) {
+      return 'Seu perfil não tem permissão para acessar este catálogo.';
+    }
+
     return error.message;
   }
 
@@ -24,6 +34,7 @@ const getAlbumsErrorMessage = (error: unknown): string => {
 export function AlbumsPage() {
   const { clearSession, session } = useSession();
   const accessToken = session?.accessToken;
+  const isAdmin = session?.user.role === 'admin';
   const [albums, setAlbums] = useState<readonly AlbumSummary[]>([]);
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>(
     'loading'
@@ -138,7 +149,7 @@ export function AlbumsPage() {
             </div>
           ) : null}
 
-          {status !== 'loading' ? (
+          {status !== 'loading' && isAdmin ? (
             <CreateAlbumForm
               isSubmitting={isCreatingAlbum}
               onCreateAlbum={handleCreateAlbum}
@@ -149,8 +160,9 @@ export function AlbumsPage() {
             <div className="rounded-xl border border-dashed border-line bg-white px-5 py-8">
               <h2 className="text-lg font-semibold">Nenhum álbum ainda</h2>
               <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-                Os álbuns criados aparecerão aqui. Quando houver um álbum,
-                abra-o para conferir as seções cadastradas.
+                {isAdmin
+                  ? 'Os álbuns criados aparecerão aqui. Quando houver um álbum, abra-o para conferir as seções cadastradas.'
+                  : 'Nenhum álbum publicado está disponível para sua coleção neste momento.'}
               </p>
             </div>
           ) : null}
@@ -172,9 +184,11 @@ export function AlbumsPage() {
                         {album.edition ?? 'Sem edição informada'}
                       </p>
                     </div>
-                    <span className="rounded-lg border border-line px-2 py-1 text-xs font-semibold uppercase text-slate-600">
-                      {album.status}
-                    </span>
+                    {isAdmin ? (
+                      <span className="rounded-lg border border-line px-2 py-1 text-xs font-semibold uppercase text-slate-600">
+                        {albumStatusLabels[album.status]}
+                      </span>
+                    ) : null}
                   </div>
                   {album.description ? (
                     <p className="mt-4 line-clamp-3 text-sm leading-6 text-slate-600">

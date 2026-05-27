@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { listAlbums, requestApi } from './http-client';
+import { listAlbums, requestApi, updateAlbumStatus } from './http-client';
 
 describe('http client', () => {
   afterEach(() => {
@@ -62,5 +62,45 @@ describe('http client', () => {
       message: 'Validation failed',
       details: ['email must be valid']
     });
+  });
+
+  it('sends administrative album status updates', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          id: 'album-id',
+          name: 'World Cup 2026',
+          edition: null,
+          description: null,
+          status: 'published',
+          createdBy: 'user-id',
+          createdAt: '2026-01-01T00:00:00.000Z',
+          updatedAt: '2026-01-01T00:00:00.000Z'
+        }),
+        {
+          status: 200,
+          headers: {
+            'content-type': 'application/json'
+          }
+        }
+      )
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    await updateAlbumStatus({
+      token: 'access-token',
+      albumId: 'album-id',
+      status: {
+        status: 'published'
+      }
+    });
+
+    const [url, options] = fetchMock.mock.calls[0] as [string, RequestInit];
+    const headers = options.headers as Headers;
+
+    expect(url).toBe('http://localhost:3001/api/v1/albums/album-id/status');
+    expect(options.method).toBe('PATCH');
+    expect(headers.get('authorization')).toBe('Bearer access-token');
+    expect(options.body).toBe(JSON.stringify({ status: 'published' }));
   });
 });
