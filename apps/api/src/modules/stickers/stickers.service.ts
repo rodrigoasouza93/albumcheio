@@ -1,7 +1,10 @@
 import { Inject, Injectable } from '@nestjs/common';
 
 import { mapSupabaseError } from '../auth/supabase-error.mapper.js';
+import { MetricsService } from '../observability/metrics.service.js';
+import { StructuredLoggerService } from '../observability/structured-logger.service.js';
 import type { SupabaseStickerRow } from '../supabase/supabase.types.js';
+import type { CatalogActor } from '../albums/albums.types.js';
 import { StickersRepository } from './data/stickers.repository.js';
 import type {
   CreateStickerInput,
@@ -15,7 +18,11 @@ import type {
 export class StickersService {
   public constructor(
     @Inject(StickersRepository)
-    private readonly stickersRepository: StickersRepository
+    private readonly stickersRepository: StickersRepository,
+    @Inject(MetricsService)
+    private readonly metricsService: MetricsService,
+    @Inject(StructuredLoggerService)
+    private readonly logger: StructuredLoggerService
   ) {}
 
   public async createSticker(
@@ -23,9 +30,21 @@ export class StickersService {
   ): Promise<StickerSummary> {
     try {
       const sticker = await this.stickersRepository.createSticker(input);
+      this.recordAdminMutation(input.actor, {
+        resource: 'sticker',
+        action: 'create',
+        outcome: 'success',
+        albumId: input.albumId
+      });
 
       return this.mapSticker(sticker);
     } catch (error) {
+      this.recordAdminMutation(input.actor, {
+        resource: 'sticker',
+        action: 'create',
+        outcome: 'failure',
+        albumId: input.albumId
+      });
       throw mapSupabaseError(error);
     }
   }
@@ -55,23 +74,70 @@ export class StickersService {
   ): Promise<StickerSummary> {
     try {
       const sticker = await this.stickersRepository.updateSticker(input);
+      this.recordAdminMutation(input.actor, {
+        resource: 'sticker',
+        action: 'update',
+        outcome: 'success',
+        albumId: input.albumId
+      });
 
       return this.mapSticker(sticker);
     } catch (error) {
+      this.recordAdminMutation(input.actor, {
+        resource: 'sticker',
+        action: 'update',
+        outcome: 'failure',
+        albumId: input.albumId
+      });
       throw mapSupabaseError(error);
     }
   }
 
   public async deleteSticker(input: {
     readonly accessToken: string;
+    readonly actor?: CatalogActor;
     readonly albumId: string;
     readonly stickerId: string;
   }): Promise<void> {
     try {
       await this.stickersRepository.deleteSticker(input);
+      this.recordAdminMutation(input.actor, {
+        resource: 'sticker',
+        action: 'delete',
+        outcome: 'success',
+        albumId: input.albumId
+      });
     } catch (error) {
+      this.recordAdminMutation(input.actor, {
+        resource: 'sticker',
+        action: 'delete',
+        outcome: 'failure',
+        albumId: input.albumId
+      });
       throw mapSupabaseError(error);
     }
+  }
+
+  private recordAdminMutation(
+    actor: CatalogActor | undefined,
+    input: {
+      readonly resource: string;
+      readonly action: string;
+      readonly outcome: string;
+      readonly albumId?: string;
+    }
+  ): void {
+    this.metricsService.recordCatalogAdminMutation(input);
+
+    if (!actor) {
+      return;
+    }
+
+    this.logger.logCatalogAdminMutation({
+      userId: actor.userId,
+      role: actor.role,
+      ...input
+    });
   }
 
   private mapSticker(sticker: SupabaseStickerRow): StickerSummary {

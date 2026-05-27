@@ -2,6 +2,8 @@ import { ConflictException } from '@nestjs/common';
 import { describe, expect, it, vi } from 'vitest';
 
 import { SupabaseApiError } from '../supabase/supabase-api.error.js';
+import type { MetricsService } from '../observability/metrics.service.js';
+import type { StructuredLoggerService } from '../observability/structured-logger.service.js';
 import type { StickersRepository } from './data/stickers.repository.js';
 import { StickersService } from './stickers.service.js';
 
@@ -17,12 +19,27 @@ const stickerRow = {
   updated_at: '2026-05-25T10:00:00.000Z'
 };
 
+const createObservability = () => ({
+  metricsService: {
+    recordCatalogAdminMutation: vi.fn()
+  } as unknown as MetricsService,
+  logger: {
+    logCatalogAdminMutation: vi.fn()
+  } as unknown as StructuredLoggerService
+});
+
+const createService = (repository: StickersRepository): StickersService => {
+  const { metricsService, logger } = createObservability();
+
+  return new StickersService(repository, metricsService, logger);
+};
+
 describe('StickersService', () => {
   it('creates a sticker and maps API fields', async () => {
     const repository = {
       createSticker: vi.fn().mockResolvedValue(stickerRow)
     } as unknown as StickersRepository;
-    const service = new StickersService(repository);
+    const service = createService(repository);
 
     const sticker = await service.createSticker({
       accessToken: 'access-token',
@@ -51,7 +68,7 @@ describe('StickersService', () => {
     const repository = {
       listStickers: vi.fn().mockResolvedValue([stickerRow])
     } as unknown as StickersRepository;
-    const service = new StickersService(repository);
+    const service = createService(repository);
 
     const page = await service.listStickers({
       accessToken: 'access-token',
@@ -90,7 +107,7 @@ describe('StickersService', () => {
           new SupabaseApiError(400, 'duplicate key value', '23505')
         )
     } as unknown as StickersRepository;
-    const service = new StickersService(repository);
+    const service = createService(repository);
 
     await expect(
       service.createSticker({
@@ -113,7 +130,7 @@ describe('StickersService', () => {
     const repository = {
       updateSticker
     } as unknown as StickersRepository;
-    const service = new StickersService(repository);
+    const service = createService(repository);
 
     const sticker = await service.updateSticker({
       accessToken: 'access-token',

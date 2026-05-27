@@ -1,6 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common';
 
 import { mapSupabaseError } from '../auth/supabase-error.mapper.js';
+import { MetricsService } from '../observability/metrics.service.js';
+import { StructuredLoggerService } from '../observability/structured-logger.service.js';
 import type {
   SupabaseAlbumRow,
   SupabaseAlbumSectionRow
@@ -20,26 +22,44 @@ import type {
   UpdateAlbumSectionInput,
   UpdateAlbumStatusInput
 } from './albums.types.js';
+import type { CatalogActor, ProfileRole } from './albums.types.js';
 
 @Injectable()
 export class AlbumsService {
   public constructor(
     @Inject(AlbumsRepository)
-    private readonly albumsRepository: AlbumsRepository
+    private readonly albumsRepository: AlbumsRepository,
+    @Inject(MetricsService)
+    private readonly metricsService: MetricsService,
+    @Inject(StructuredLoggerService)
+    private readonly logger: StructuredLoggerService
   ) {}
 
   public async createAlbum(input: CreateAlbumInput): Promise<AlbumSummary> {
     try {
       const album = await this.albumsRepository.createAlbum(input);
+      this.recordAdminMutation(input.actor, {
+        resource: 'album',
+        action: 'create',
+        outcome: 'success',
+        albumId: album.id
+      });
 
       return this.mapAlbum(album);
     } catch (error) {
+      this.recordAdminMutation(input.actor, {
+        resource: 'album',
+        action: 'create',
+        outcome: 'failure'
+      });
       throw mapSupabaseError(error);
     }
   }
 
   public async listAlbums(input: {
     readonly accessToken: string;
+    readonly userId: string;
+    readonly role: ProfileRole;
     readonly page: PageQuery;
   }): Promise<AlbumPage> {
     try {
@@ -48,17 +68,44 @@ export class AlbumsService {
         input.page
       );
 
+      const items = albums.map((album) => this.mapAlbum(album));
+
+      items.forEach((album) => {
+        this.recordAlbumRead({
+          userId: input.userId,
+          role: input.role,
+          status: album.status,
+          outcome: 'success',
+          albumId: album.id
+        });
+      });
+
+      if (items.length === 0) {
+        this.metricsService.recordCatalogAlbumRead({
+          status: 'none',
+          role: input.role,
+          outcome: 'empty'
+        });
+      }
+
       return {
-        items: albums.map((album) => this.mapAlbum(album)),
+        items,
         ...input.page
       };
     } catch (error) {
+      this.metricsService.recordCatalogAlbumRead({
+        status: 'unknown',
+        role: input.role,
+        outcome: 'failure'
+      });
       throw mapSupabaseError(error);
     }
   }
 
   public async getAlbumDetail(input: {
     readonly accessToken: string;
+    readonly userId: string;
+    readonly role: ProfileRole;
     readonly albumId: string;
   }): Promise<AlbumDetail> {
     try {
@@ -71,11 +118,24 @@ export class AlbumsService {
         input.albumId
       );
 
+      this.recordAlbumRead({
+        userId: input.userId,
+        role: input.role,
+        status: album.status,
+        outcome: 'success',
+        albumId: album.id
+      });
+
       return {
         ...this.mapAlbum(album),
         sections: sections.map((section) => this.mapSection(section))
       };
     } catch (error) {
+      this.metricsService.recordCatalogAlbumRead({
+        status: 'unknown',
+        role: input.role,
+        outcome: 'failure'
+      });
       throw mapSupabaseError(error);
     }
   }
@@ -85,9 +145,21 @@ export class AlbumsService {
   ): Promise<AlbumSectionSummary> {
     try {
       const section = await this.albumsRepository.createSection(input);
+      this.recordAdminMutation(input.actor, {
+        resource: 'section',
+        action: 'create',
+        outcome: 'success',
+        albumId: input.albumId
+      });
 
       return this.mapSection(section);
     } catch (error) {
+      this.recordAdminMutation(input.actor, {
+        resource: 'section',
+        action: 'create',
+        outcome: 'failure',
+        albumId: input.albumId
+      });
       throw mapSupabaseError(error);
     }
   }
@@ -95,9 +167,21 @@ export class AlbumsService {
   public async updateAlbum(input: UpdateAlbumInput): Promise<AlbumSummary> {
     try {
       const album = await this.albumsRepository.updateAlbum(input);
+      this.recordAdminMutation(input.actor, {
+        resource: 'album',
+        action: 'update',
+        outcome: 'success',
+        albumId: input.albumId
+      });
 
       return this.mapAlbum(album);
     } catch (error) {
+      this.recordAdminMutation(input.actor, {
+        resource: 'album',
+        action: 'update',
+        outcome: 'failure',
+        albumId: input.albumId
+      });
       throw mapSupabaseError(error);
     }
   }
@@ -107,15 +191,28 @@ export class AlbumsService {
   ): Promise<AlbumSummary> {
     try {
       const album = await this.albumsRepository.updateAlbumStatus(input);
+      this.recordAdminMutation(input.actor, {
+        resource: 'album',
+        action: 'status',
+        outcome: 'success',
+        albumId: input.albumId
+      });
 
       return this.mapAlbum(album);
     } catch (error) {
+      this.recordAdminMutation(input.actor, {
+        resource: 'album',
+        action: 'status',
+        outcome: 'failure',
+        albumId: input.albumId
+      });
       throw mapSupabaseError(error);
     }
   }
 
   public archiveAlbum(input: {
     readonly accessToken: string;
+    readonly actor?: CatalogActor;
     readonly albumId: string;
   }): Promise<AlbumSummary> {
     return this.updateAlbumStatus({
@@ -129,23 +226,92 @@ export class AlbumsService {
   ): Promise<AlbumSectionSummary> {
     try {
       const section = await this.albumsRepository.updateSection(input);
+      this.recordAdminMutation(input.actor, {
+        resource: 'section',
+        action: 'update',
+        outcome: 'success',
+        albumId: input.albumId
+      });
 
       return this.mapSection(section);
     } catch (error) {
+      this.recordAdminMutation(input.actor, {
+        resource: 'section',
+        action: 'update',
+        outcome: 'failure',
+        albumId: input.albumId
+      });
       throw mapSupabaseError(error);
     }
   }
 
   public async deleteSection(input: {
     readonly accessToken: string;
+    readonly actor?: CatalogActor;
     readonly albumId: string;
     readonly sectionId: string;
   }): Promise<void> {
     try {
       await this.albumsRepository.deleteSection(input);
+      this.recordAdminMutation(input.actor, {
+        resource: 'section',
+        action: 'delete',
+        outcome: 'success',
+        albumId: input.albumId
+      });
     } catch (error) {
+      this.recordAdminMutation(input.actor, {
+        resource: 'section',
+        action: 'delete',
+        outcome: 'failure',
+        albumId: input.albumId
+      });
       throw mapSupabaseError(error);
     }
+  }
+
+  private recordAdminMutation(
+    actor: CatalogActor | undefined,
+    input: {
+      readonly resource: string;
+      readonly action: string;
+      readonly outcome: string;
+      readonly albumId?: string;
+    }
+  ): void {
+    this.metricsService.recordCatalogAdminMutation(input);
+
+    if (!actor) {
+      return;
+    }
+
+    this.logger.logCatalogAdminMutation({
+      userId: actor.userId,
+      role: actor.role,
+      ...input
+    });
+  }
+
+  private recordAlbumRead(input: {
+    readonly userId: string;
+    readonly role: ProfileRole;
+    readonly status: string;
+    readonly outcome: string;
+    readonly albumId: string;
+  }): void {
+    this.metricsService.recordCatalogAlbumRead({
+      status: input.status,
+      role: input.role,
+      outcome: input.outcome
+    });
+    this.logger.logCatalogAlbumRead({
+      userId: input.userId,
+      role: input.role,
+      resource: 'album',
+      action: 'read',
+      outcome: input.outcome,
+      albumId: input.albumId
+    });
   }
 
   private mapAlbum(album: SupabaseAlbumRow): AlbumSummary {

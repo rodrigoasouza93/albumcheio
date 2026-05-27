@@ -2,6 +2,8 @@ import { ConflictException } from '@nestjs/common';
 import { describe, expect, it, vi } from 'vitest';
 
 import { SupabaseApiError } from '../supabase/supabase-api.error.js';
+import type { MetricsService } from '../observability/metrics.service.js';
+import type { StructuredLoggerService } from '../observability/structured-logger.service.js';
 import type { AlbumsRepository } from './data/albums.repository.js';
 import { AlbumsService } from './albums.service.js';
 
@@ -27,12 +29,29 @@ const sectionRow = {
   updated_at: '2026-05-25T10:00:00.000Z'
 };
 
+const createObservability = () => ({
+  metricsService: {
+    recordCatalogAdminMutation: vi.fn(),
+    recordCatalogAlbumRead: vi.fn()
+  } as unknown as MetricsService,
+  logger: {
+    logCatalogAdminMutation: vi.fn(),
+    logCatalogAlbumRead: vi.fn()
+  } as unknown as StructuredLoggerService
+});
+
+const createService = (repository: AlbumsRepository): AlbumsService => {
+  const { metricsService, logger } = createObservability();
+
+  return new AlbumsService(repository, metricsService, logger);
+};
+
 describe('AlbumsService', () => {
   it('creates an album and maps API fields', async () => {
     const repository = {
       createAlbum: vi.fn().mockResolvedValue(albumRow)
     } as unknown as AlbumsRepository;
-    const service = new AlbumsService(repository);
+    const service = createService(repository);
 
     const album = await service.createAlbum({
       userId: 'user-id',
@@ -59,10 +78,12 @@ describe('AlbumsService', () => {
       getAlbum: vi.fn().mockResolvedValue(albumRow),
       listSections: vi.fn().mockResolvedValue([sectionRow])
     } as unknown as AlbumsRepository;
-    const service = new AlbumsService(repository);
+    const service = createService(repository);
 
     const detail = await service.getAlbumDetail({
       accessToken: 'access-token',
+      userId: 'user-id',
+      role: 'admin',
       albumId: 'album-id'
     });
 
@@ -88,7 +109,7 @@ describe('AlbumsService', () => {
           new SupabaseApiError(400, 'duplicate key value', '23505')
         )
     } as unknown as AlbumsRepository;
-    const service = new AlbumsService(repository);
+    const service = createService(repository);
 
     await expect(
       service.createSection({
@@ -110,7 +131,7 @@ describe('AlbumsService', () => {
     const repository = {
       updateAlbumStatus
     } as unknown as AlbumsRepository;
-    const service = new AlbumsService(repository);
+    const service = createService(repository);
 
     const album = await service.updateAlbumStatus({
       accessToken: 'access-token',
@@ -134,7 +155,7 @@ describe('AlbumsService', () => {
     const repository = {
       updateAlbumStatus
     } as unknown as AlbumsRepository;
-    const service = new AlbumsService(repository);
+    const service = createService(repository);
 
     const album = await service.archiveAlbum({
       accessToken: 'access-token',
@@ -156,7 +177,7 @@ describe('AlbumsService', () => {
         code: 'ARG'
       })
     } as unknown as AlbumsRepository;
-    const service = new AlbumsService(repository);
+    const service = createService(repository);
 
     const section = await service.updateSection({
       accessToken: 'access-token',

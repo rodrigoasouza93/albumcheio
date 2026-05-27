@@ -1,19 +1,35 @@
 import { expect, test, type Page, type Route } from '@playwright/test';
 
 const timestamp = '2026-05-25T10:00:00.000Z';
-const user = {
-  id: 'user-id',
-  name: 'Rodrigo',
-  email: 'collector@example.com',
+const adminUser = {
+  id: 'admin-id',
+  name: 'Admin',
+  email: 'admin@example.com',
+  role: 'admin',
   createdAt: timestamp,
   updatedAt: timestamp
 };
-const session = {
+const commonUser = {
+  id: 'user-id',
+  name: 'Rodrigo',
+  email: 'collector@example.com',
+  role: 'user',
+  createdAt: timestamp,
+  updatedAt: timestamp
+};
+const adminSession = {
   accessToken: 'access-token',
   refreshToken: 'refresh-token',
   expiresIn: 3600,
   tokenType: 'bearer',
-  user
+  user: adminUser
+};
+const commonSession = {
+  accessToken: 'user-access-token',
+  refreshToken: 'user-refresh-token',
+  expiresIn: 3600,
+  tokenType: 'bearer',
+  user: commonUser
 };
 const album = {
   id: 'album-id',
@@ -21,7 +37,7 @@ const album = {
   edition: 'Panini',
   description: 'Álbum principal do torneio',
   status: 'draft',
-  createdBy: user.id,
+  createdBy: adminUser.id,
   createdAt: timestamp,
   updatedAt: timestamp
 };
@@ -86,7 +102,14 @@ const fulfillJson = async (route: Route, body: unknown, status = 200) => {
   });
 };
 
-const mockApi = async (page: Page) => {
+const mockApi = async (
+  page: Page,
+  input: {
+    readonly initialStatus?: 'draft' | 'published';
+    readonly listAlbumForUser?: boolean;
+  } = {}
+) => {
+  let albumStatus = input.initialStatus ?? 'draft';
   const quantities = new Map<string, number>([
     [firstSticker.id, 2],
     [secondSticker.id, 0]
@@ -99,12 +122,12 @@ const mockApi = async (page: Page) => {
 
     if (path === '/auth/register' && request.method() === 'POST') {
       await fulfillJson(route, {
-        user,
+        user: adminUser,
         session: {
-          accessToken: session.accessToken,
-          refreshToken: session.refreshToken,
-          expiresIn: session.expiresIn,
-          tokenType: session.tokenType
+          accessToken: adminSession.accessToken,
+          refreshToken: adminSession.refreshToken,
+          expiresIn: adminSession.expiresIn,
+          tokenType: adminSession.tokenType
         }
       });
       return;
@@ -112,24 +135,41 @@ const mockApi = async (page: Page) => {
 
     if (path === '/auth/login' && request.method() === 'POST') {
       await fulfillJson(route, {
-        user,
+        user: adminUser,
         session: {
-          accessToken: session.accessToken,
-          refreshToken: session.refreshToken,
-          expiresIn: session.expiresIn,
-          tokenType: session.tokenType
+          accessToken: adminSession.accessToken,
+          refreshToken: adminSession.refreshToken,
+          expiresIn: adminSession.expiresIn,
+          tokenType: adminSession.tokenType
         }
       });
       return;
     }
 
     if (path === '/me') {
-      await fulfillJson(route, user);
+      const authorization = request.headers().authorization ?? '';
+      await fulfillJson(
+        route,
+        authorization.includes(commonSession.accessToken)
+          ? commonUser
+          : adminUser
+      );
       return;
     }
 
     if (path === '/albums' && request.method() === 'GET') {
-      await fulfillJson(route, { items: [album], limit: 50, offset: 0 });
+      const authorization = request.headers().authorization ?? '';
+      const isCommonUser = authorization.includes(commonSession.accessToken);
+      const canListAlbum =
+        !isCommonUser ||
+        albumStatus === 'published' ||
+        input.listAlbumForUser === true;
+
+      await fulfillJson(route, {
+        items: canListAlbum ? [{ ...album, status: albumStatus }] : [],
+        limit: 50,
+        offset: 0
+      });
       return;
     }
 
@@ -139,7 +179,21 @@ const mockApi = async (page: Page) => {
     }
 
     if (path === `/albums/${album.id}`) {
-      await fulfillJson(route, { ...album, sections: [section] });
+      await fulfillJson(route, {
+        ...album,
+        status: albumStatus,
+        sections: [section]
+      });
+      return;
+    }
+
+    if (path === `/albums/${album.id}/status` && request.method() === 'PATCH') {
+      const body = JSON.parse(request.postData() ?? '{}') as {
+        readonly status?: 'draft' | 'published';
+      };
+      albumStatus = body.status ?? albumStatus;
+
+      await fulfillJson(route, { ...album, status: albumStatus });
       return;
     }
 
@@ -157,14 +211,18 @@ const mockApi = async (page: Page) => {
       return;
     }
 
-    if (path === `/albums/${album.id}/stickers` && request.method() === 'POST') {
+    if (
+      path === `/albums/${album.id}/stickers` &&
+      request.method() === 'POST'
+    ) {
       await fulfillJson(route, createdSticker);
       return;
     }
 
     if (path === `/albums/${album.id}/collection/search`) {
       const code = url.searchParams.get('code')?.toUpperCase();
-      const sticker = code === secondSticker.code ? secondSticker : firstSticker;
+      const sticker =
+        code === secondSticker.code ? secondSticker : firstSticker;
       const quantityTotal = quantities.get(sticker.id) ?? 0;
       const duplicateCount = Math.max(quantityTotal - 1, 0);
 
@@ -189,7 +247,7 @@ const mockApi = async (page: Page) => {
       quantities.set(secondSticker.id, 1);
       await fulfillJson(route, {
         id: 'collection-item-id',
-        userId: user.id,
+        userId: commonUser.id,
         stickerId: secondSticker.id,
         quantityTotal: 1,
         owned: true,
@@ -201,8 +259,9 @@ const mockApi = async (page: Page) => {
     }
 
     if (path === `/albums/${album.id}/progress`) {
-      const owned = [...quantities.values()].filter((quantity) => quantity > 0)
-        .length;
+      const owned = [...quantities.values()].filter(
+        (quantity) => quantity > 0
+      ).length;
 
       await fulfillJson(route, {
         albumId: album.id,
@@ -253,26 +312,21 @@ const mockApi = async (page: Page) => {
   });
 };
 
-const saveSession = async (page: Page) => {
+const saveSession = async (page: Page, storedSession = adminSession) => {
   await page.addInitScript((storedSession) => {
     window.localStorage.setItem(
       'albumcheio.session',
       JSON.stringify(storedSession)
     );
-  }, session);
+  }, storedSession);
 };
 
-test('registers, logs in, and creates a basic album catalog', async ({
+test('admin creates a draft catalog, publishes it, and unpublishes it', async ({
   page
 }) => {
   await mockApi(page);
-  await page.goto('/');
-
-  await page.getByRole('button', { name: 'Criar conta' }).click();
-  await page.getByLabel('Nome').fill(user.name);
-  await page.getByLabel('Email').fill(user.email);
-  await page.getByLabel('Senha').fill('12345678');
-  await page.locator('form').getByRole('button', { name: 'Criar conta' }).click();
+  await saveSession(page, adminSession);
+  await page.goto('/albums');
 
   await expect(
     page.getByRole('heading', { name: 'Álbuns cadastrados' })
@@ -284,20 +338,13 @@ test('registers, logs in, and creates a basic album catalog', async ({
   await page.getByLabel('Descrição').fill(createdAlbum.description);
   await page.getByRole('button', { name: 'Criar álbum' }).click();
 
-  await expect(page.getByText(`${createdAlbum.name} foi criado.`)).toBeVisible();
-});
-
-test('creates section and sticker, marks possession, searches, and shows progress', async ({
-  page
-}) => {
-  await mockApi(page);
-  await saveSession(page);
+  await expect(
+    page.getByText(`${createdAlbum.name} foi criado.`)
+  ).toBeVisible();
   await page.goto(`/albums/${album.id}`);
 
   await expect(page.getByRole('heading', { name: album.name })).toBeVisible();
-  await expect(
-    page.getByRole('heading', { name: 'Progresso da coleção' })
-  ).toBeVisible();
+  await expect(page.getByText('Status: Rascunho')).toBeVisible();
 
   await page.getByLabel('Nome da seção').fill(createdSection.name);
   await page.getByLabel('Código da seção').fill(createdSection.code);
@@ -314,13 +361,45 @@ test('creates section and sticker, marks possession, searches, and shows progres
     page.getByText(`${createdSticker.code} foi adicionada.`)
   ).toBeVisible();
 
+  await page.getByRole('button', { name: 'Publicar', exact: true }).click();
+  await expect(page.getByText('Status: Publicado')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Despublicar' }).click();
+  await expect(page.getByText('Status: Rascunho')).toBeVisible();
+});
+
+test('common user consumes a published album and updates the collection', async ({
+  page
+}) => {
+  await mockApi(page, { initialStatus: 'published' });
+  await saveSession(page, commonSession);
+  await page.goto('/albums');
+
+  await expect(
+    page.getByRole('heading', { name: 'Álbuns cadastrados' })
+  ).toBeVisible();
+  await expect(page.getByText(album.name).first()).toBeVisible();
+  await expect(page.getByLabel('Nome do álbum')).toHaveCount(0);
+
+  await page
+    .getByRole('link', { name: /Abrir álbum/ })
+    .first()
+    .click();
+  await expect(page.getByRole('heading', { name: album.name })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Publicar' })).toHaveCount(0);
+  await expect(
+    page.getByRole('heading', { name: 'Progresso da coleção' })
+  ).toBeVisible();
+
   const searchPanel = page.locator('form').filter({
     has: page.getByRole('button', { name: 'Buscar' })
   });
 
   await searchPanel.getByLabel('Código da figurinha').fill(secondSticker.code);
   await searchPanel.getByRole('button', { name: 'Buscar' }).click();
-  await expect(page.getByText(`Faltando · ${secondSticker.code}`)).toBeVisible();
+  await expect(
+    page.getByText(`Faltando · ${secondSticker.code}`)
+  ).toBeVisible();
 
   await page
     .locator('article')
@@ -331,14 +410,46 @@ test('creates section and sticker, marks possession, searches, and shows progres
   await expect(page.getByText('100%').first()).toBeVisible();
 });
 
+test('unpublished albums leave existing collection access intact', async ({
+  page
+}) => {
+  await mockApi(page, { initialStatus: 'draft' });
+  await saveSession(page, commonSession);
+  await page.goto('/albums');
+
+  await expect(page.getByText(album.name)).toHaveCount(0);
+  await expect(
+    page.getByText('Nenhum álbum publicado está disponível')
+  ).toBeVisible();
+
+  await page.goto(`/albums/${album.id}`);
+  await expect(page.getByRole('heading', { name: album.name })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: 'Progresso da coleção' })
+  ).toBeVisible();
+  await expect(
+    page.getByText(`${secondSticker.code} · ${secondSticker.title}`)
+  ).toBeVisible();
+
+  const searchPanel = page.locator('form').filter({
+    has: page.getByRole('button', { name: 'Buscar' })
+  });
+
+  await searchPanel.getByLabel('Código da figurinha').fill(secondSticker.code);
+  await searchPanel.getByRole('button', { name: 'Buscar' }).click();
+  await expect(
+    page.getByText(`Faltando · ${secondSticker.code}`)
+  ).toBeVisible();
+});
+
 test('supports mobile missing, duplicate, code search, and navigation', async ({
   isMobile,
   page
 }) => {
   test.skip(!isMobile, 'Mobile-only accessibility and navigation coverage.');
 
-  await mockApi(page);
-  await saveSession(page);
+  await mockApi(page, { initialStatus: 'published' });
+  await saveSession(page, commonSession);
   await page.goto(`/albums/${album.id}`);
 
   await expect(
@@ -347,8 +458,9 @@ test('supports mobile missing, duplicate, code search, and navigation', async ({
   await expect(
     page.getByText(`${secondSticker.code} · ${secondSticker.title}`)
   ).toBeVisible();
-  await expect(page.getByText(`${firstSticker.code} · ${firstSticker.title}`))
-    .toBeVisible();
+  await expect(
+    page.getByText(`${firstSticker.code} · ${firstSticker.title}`)
+  ).toBeVisible();
   const searchPanel = page.locator('form').filter({
     has: page.getByRole('button', { name: 'Buscar' })
   });
@@ -356,9 +468,7 @@ test('supports mobile missing, duplicate, code search, and navigation', async ({
   await searchPanel.getByLabel('Código da figurinha').fill(firstSticker.code);
   await searchPanel.getByRole('button', { name: 'Buscar' }).click();
 
-  await expect(
-    page.getByText(`Repetida · ${firstSticker.code}`)
-  ).toBeVisible();
+  await expect(page.getByText(`Repetida · ${firstSticker.code}`)).toBeVisible();
   await page.getByRole('link', { name: 'Voltar para álbuns' }).click();
   await expect(
     page.getByRole('heading', { name: 'Álbuns cadastrados' })

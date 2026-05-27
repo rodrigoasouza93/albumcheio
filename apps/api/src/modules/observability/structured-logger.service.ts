@@ -13,6 +13,15 @@ interface RequestLogInput {
   readonly userId?: string;
 }
 
+interface CatalogEventInput {
+  readonly userId: string;
+  readonly role: string;
+  readonly resource: string;
+  readonly action: string;
+  readonly outcome: string;
+  readonly albumId?: string;
+}
+
 const SENSITIVE_KEY_PATTERN =
   /password|token|authorization|secret|apikey|api_key|service_role/i;
 
@@ -36,6 +45,42 @@ export class StructuredLoggerService {
     });
   }
 
+  public logCatalogAdminMutation(input: CatalogEventInput): void {
+    this.write('info', {
+      event: 'catalog_admin_mutation',
+      userId: input.userId,
+      role: input.role,
+      resource: input.resource,
+      action: input.action,
+      outcome: input.outcome,
+      ...(input.albumId ? { albumId: input.albumId } : {})
+    });
+  }
+
+  public logCatalogAuthorizationDenial(input: CatalogEventInput): void {
+    this.write('error', {
+      event: 'catalog_authorization_denial',
+      userId: input.userId,
+      role: input.role,
+      resource: input.resource,
+      action: input.action,
+      outcome: input.outcome,
+      ...(input.albumId ? { albumId: input.albumId } : {})
+    });
+  }
+
+  public logCatalogAlbumRead(input: CatalogEventInput): void {
+    this.write('info', {
+      event: 'catalog_album_read',
+      userId: input.userId,
+      role: input.role,
+      resource: input.resource,
+      action: input.action,
+      outcome: input.outcome,
+      ...(input.albumId ? { albumId: input.albumId } : {})
+    });
+  }
+
   public sanitize(value: unknown): unknown {
     if (Array.isArray(value)) {
       return value.map((item) => this.sanitize(item));
@@ -48,7 +93,9 @@ export class StructuredLoggerService {
     return Object.fromEntries(
       Object.entries(value).map(([key, entryValue]) => [
         key,
-        SENSITIVE_KEY_PATTERN.test(key) ? '[REDACTED]' : this.sanitize(entryValue)
+        SENSITIVE_KEY_PATTERN.test(key)
+          ? '[REDACTED]'
+          : this.sanitize(entryValue)
       ])
     );
   }

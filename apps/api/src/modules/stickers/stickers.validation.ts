@@ -8,6 +8,7 @@ import {
   parsePageQuery,
   parseRequiredUuid
 } from '../albums/albums.validation.js';
+import type { CatalogActor } from '../albums/albums.types.js';
 import type {
   CreateStickerInput,
   StickerFilter,
@@ -65,10 +66,8 @@ const getQueryStringField = (
     : undefined;
 };
 
-const hasField = (
-  body: Record<string, unknown>,
-  fieldName: string
-): boolean => Object.prototype.hasOwnProperty.call(body, fieldName);
+const hasField = (body: Record<string, unknown>, fieldName: string): boolean =>
+  Object.prototype.hasOwnProperty.call(body, fieldName);
 
 const throwValidationError = (errors: readonly string[]): never => {
   throw new UnprocessableEntityException({
@@ -80,7 +79,8 @@ const throwValidationError = (errors: readonly string[]): never => {
 export const parseCreateStickerInput = (
   body: unknown,
   albumId: string,
-  accessToken: string
+  accessToken: string,
+  actor?: CatalogActor
 ): CreateStickerInput => {
   const record = assertRecord(body);
   const sectionId = getRequiredStringField(record, 'sectionId');
@@ -115,6 +115,7 @@ export const parseCreateStickerInput = (
 
   return {
     accessToken,
+    ...(actor ? { actor } : {}),
     albumId,
     sectionId,
     code,
@@ -128,7 +129,8 @@ export const parseUpdateStickerInput = (
   body: unknown,
   albumId: string,
   stickerId: string,
-  accessToken: string
+  accessToken: string,
+  actor?: CatalogActor
 ): UpdateStickerInput => {
   const record = assertRecord(body);
   const hasSectionId = hasField(record, 'sectionId');
@@ -147,7 +149,8 @@ export const parseUpdateStickerInput = (
           ? rawNumber
           : Number.NaN;
   const title = getOptionalStringField(record, 'title');
-  const hasSortOrder = record.sortOrder !== undefined && record.sortOrder !== null;
+  const hasSortOrder =
+    record.sortOrder !== undefined && record.sortOrder !== null;
   const sortOrder = getNumberField(record, 'sortOrder', 0);
   const errors = [
     ...(hasSectionId && sectionId === null
@@ -171,6 +174,7 @@ export const parseUpdateStickerInput = (
   ];
   const input = {
     accessToken,
+    ...(actor ? { actor } : {}),
     albumId,
     stickerId,
     ...(hasSectionId ? { sectionId: sectionId ?? '' } : {}),
@@ -180,7 +184,7 @@ export const parseUpdateStickerInput = (
     ...(hasSortOrder ? { sortOrder } : {})
   };
 
-  if (Object.keys(input).length === 3) {
+  if (Object.keys(input).length === (actor ? 4 : 3)) {
     errors.push('at least one sticker field must be provided');
   }
 

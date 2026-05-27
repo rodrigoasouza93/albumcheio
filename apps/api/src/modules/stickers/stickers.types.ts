@@ -1,6 +1,7 @@
-import type { PageQuery } from '../albums/albums.types.js';
+import type { CatalogActor, PageQuery } from '../albums/albums.types.js';
 
 export interface CreateStickerInput {
+  readonly actor?: CatalogActor;
   readonly accessToken: string;
   readonly albumId: string;
   readonly sectionId: string;
@@ -11,6 +12,7 @@ export interface CreateStickerInput {
 }
 
 export interface UpdateStickerInput {
+  readonly actor?: CatalogActor;
   readonly accessToken: string;
   readonly albumId: string;
   readonly stickerId: string;

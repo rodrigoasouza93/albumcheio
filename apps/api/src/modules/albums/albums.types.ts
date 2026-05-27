@@ -1,5 +1,11 @@
 export type AlbumSectionKind = 'tournament' | 'team' | 'custom';
 export type AlbumStatus = 'draft' | 'published' | 'archived';
+export type ProfileRole = 'user' | 'admin';
+
+export interface CatalogActor {
+  readonly userId: string;
+  readonly role: ProfileRole;
+}
 
 export interface PageQuery {
   readonly limit: number;
@@ -7,6 +13,7 @@ export interface PageQuery {
 }
 
 export interface CreateAlbumInput {
+  readonly actor?: CatalogActor;
   readonly userId: string;
   readonly accessToken: string;
   readonly name: string;
@@ -15,6 +22,7 @@ export interface CreateAlbumInput {
 }
 
 export interface CreateAlbumSectionInput {
+  readonly actor?: CatalogActor;
   readonly accessToken: string;
   readonly albumId: string;
   readonly name: string;
@@ -24,6 +32,7 @@ export interface CreateAlbumSectionInput {
 }
 
 export interface UpdateAlbumInput {
+  readonly actor?: CatalogActor;
   readonly accessToken: string;
   readonly albumId: string;
   readonly name?: string;
@@ -32,12 +41,14 @@ export interface UpdateAlbumInput {
 }
 
 export interface UpdateAlbumStatusInput {
+  readonly actor?: CatalogActor;
   readonly accessToken: string;
   readonly albumId: string;
   readonly status: AlbumStatus;
 }
 
 export interface UpdateAlbumSectionInput {
+  readonly actor?: CatalogActor;
   readonly accessToken: string;
   readonly albumId: string;
   readonly sectionId: string;
