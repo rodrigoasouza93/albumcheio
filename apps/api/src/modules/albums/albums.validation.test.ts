@@ -4,7 +4,10 @@ import { describe, expect, it } from 'vitest';
 import {
   normalizeCatalogCode,
   parseCreateAlbumSectionInput,
-  parsePageQuery
+  parsePageQuery,
+  parseUpdateAlbumInput,
+  parseUpdateAlbumSectionInput,
+  parseUpdateAlbumStatusInput
 } from './albums.validation.js';
 
 describe('album catalog validation', () => {
@@ -41,6 +44,70 @@ describe('album catalog validation', () => {
       code: 'BRA',
       kind: 'team',
       sortOrder: 0
+    });
+  });
+
+  it('parses partial album updates', () => {
+    expect(
+      parseUpdateAlbumInput(
+        {
+          name: 'World Football Updated',
+          description: null
+        },
+        '00000000-0000-4000-8000-000000000001',
+        'access-token'
+      )
+    ).toEqual({
+      accessToken: 'access-token',
+      albumId: '00000000-0000-4000-8000-000000000001',
+      name: 'World Football Updated',
+      description: null
+    });
+  });
+
+  it('rejects empty album updates', () => {
+    expect(() =>
+      parseUpdateAlbumInput(
+        {},
+        '00000000-0000-4000-8000-000000000001',
+        'access-token'
+      )
+    ).toThrow(UnprocessableEntityException);
+  });
+
+  it('parses album status updates', () => {
+    expect(
+      parseUpdateAlbumStatusInput(
+        {
+          status: 'published'
+        },
+        '00000000-0000-4000-8000-000000000001',
+        'access-token'
+      )
+    ).toEqual({
+      accessToken: 'access-token',
+      albumId: '00000000-0000-4000-8000-000000000001',
+      status: 'published'
+    });
+  });
+
+  it('parses partial section updates with child resource ids', () => {
+    expect(
+      parseUpdateAlbumSectionInput(
+        {
+          code: ' arg ',
+          sortOrder: 2
+        },
+        '00000000-0000-4000-8000-000000000001',
+        '00000000-0000-4000-8000-000000000101',
+        'access-token'
+      )
+    ).toEqual({
+      accessToken: 'access-token',
+      albumId: '00000000-0000-4000-8000-000000000001',
+      sectionId: '00000000-0000-4000-8000-000000000101',
+      code: 'ARG',
+      sortOrder: 2
     });
   });
 });

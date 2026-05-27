@@ -7,7 +7,8 @@ import type {
   CreateStickerInput,
   StickerFilter,
   StickerPage,
-  StickerSummary
+  StickerSummary,
+  UpdateStickerInput
 } from './stickers.types.js';
 
 @Injectable()
@@ -44,6 +45,30 @@ export class StickersService {
         limit: input.filter.limit,
         offset: input.filter.offset
       };
+    } catch (error) {
+      throw mapSupabaseError(error);
+    }
+  }
+
+  public async updateSticker(
+    input: UpdateStickerInput
+  ): Promise<StickerSummary> {
+    try {
+      const sticker = await this.stickersRepository.updateSticker(input);
+
+      return this.mapSticker(sticker);
+    } catch (error) {
+      throw mapSupabaseError(error);
+    }
+  }
+
+  public async deleteSticker(input: {
+    readonly accessToken: string;
+    readonly albumId: string;
+    readonly stickerId: string;
+  }): Promise<void> {
+    try {
+      await this.stickersRepository.deleteSticker(input);
     } catch (error) {
       throw mapSupabaseError(error);
     }

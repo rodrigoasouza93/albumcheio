@@ -3,7 +3,8 @@ import { describe, expect, it } from 'vitest';
 
 import {
   parseCreateStickerInput,
-  parseStickerFilter
+  parseStickerFilter,
+  parseUpdateStickerInput
 } from './stickers.validation.js';
 
 const albumId = '00000000-0000-4000-8000-000000000001';
@@ -63,6 +64,37 @@ describe('sticker validation', () => {
           number: 0
         },
         albumId,
+        'access-token'
+      )
+    ).toThrow(UnprocessableEntityException);
+  });
+
+  it('parses partial sticker updates', () => {
+    expect(
+      parseUpdateStickerInput(
+        {
+          code: ' arg01 ',
+          number: null
+        },
+        albumId,
+        '00000000-0000-4000-8000-000000000201',
+        'access-token'
+      )
+    ).toEqual({
+      accessToken: 'access-token',
+      albumId,
+      stickerId: '00000000-0000-4000-8000-000000000201',
+      code: 'ARG01',
+      number: null
+    });
+  });
+
+  it('rejects empty sticker updates', () => {
+    expect(() =>
+      parseUpdateStickerInput(
+        {},
+        albumId,
+        '00000000-0000-4000-8000-000000000201',
         'access-token'
       )
     ).toThrow(UnprocessableEntityException);

@@ -1,4 +1,5 @@
 export type AlbumSectionKind = 'tournament' | 'team' | 'custom';
+export type AlbumStatus = 'draft' | 'published' | 'archived';
 
 export interface PageQuery {
   readonly limit: number;
@@ -22,12 +23,36 @@ export interface CreateAlbumSectionInput {
   readonly sortOrder: number;
 }
 
+export interface UpdateAlbumInput {
+  readonly accessToken: string;
+  readonly albumId: string;
+  readonly name?: string;
+  readonly edition?: string | null;
+  readonly description?: string | null;
+}
+
+export interface UpdateAlbumStatusInput {
+  readonly accessToken: string;
+  readonly albumId: string;
+  readonly status: AlbumStatus;
+}
+
+export interface UpdateAlbumSectionInput {
+  readonly accessToken: string;
+  readonly albumId: string;
+  readonly sectionId: string;
+  readonly name?: string;
+  readonly code?: string;
+  readonly kind?: AlbumSectionKind;
+  readonly sortOrder?: number;
+}
+
 export interface AlbumSummary {
   readonly id: string;
   readonly name: string;
   readonly edition: string | null;
   readonly description: string | null;
-  readonly status: string;
+  readonly status: AlbumStatus;
   readonly createdBy: string | null;
   readonly createdAt: string;
   readonly updatedAt: string;

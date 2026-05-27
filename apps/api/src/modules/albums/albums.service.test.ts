@@ -101,4 +101,70 @@ describe('AlbumsService', () => {
       })
     ).rejects.toThrow(ConflictException);
   });
+
+  it('updates album status through repository', async () => {
+    const updateAlbumStatus = vi.fn().mockResolvedValue({
+      ...albumRow,
+      status: 'published'
+    });
+    const repository = {
+      updateAlbumStatus
+    } as unknown as AlbumsRepository;
+    const service = new AlbumsService(repository);
+
+    const album = await service.updateAlbumStatus({
+      accessToken: 'access-token',
+      albumId: 'album-id',
+      status: 'published'
+    });
+
+    expect(updateAlbumStatus).toHaveBeenCalledWith({
+      accessToken: 'access-token',
+      albumId: 'album-id',
+      status: 'published'
+    });
+    expect(album.status).toBe('published');
+  });
+
+  it('archives albums instead of physically deleting them', async () => {
+    const updateAlbumStatus = vi.fn().mockResolvedValue({
+      ...albumRow,
+      status: 'archived'
+    });
+    const repository = {
+      updateAlbumStatus
+    } as unknown as AlbumsRepository;
+    const service = new AlbumsService(repository);
+
+    const album = await service.archiveAlbum({
+      accessToken: 'access-token',
+      albumId: 'album-id'
+    });
+
+    expect(updateAlbumStatus).toHaveBeenCalledWith({
+      accessToken: 'access-token',
+      albumId: 'album-id',
+      status: 'archived'
+    });
+    expect(album.status).toBe('archived');
+  });
+
+  it('updates sections through repository', async () => {
+    const repository = {
+      updateSection: vi.fn().mockResolvedValue({
+        ...sectionRow,
+        code: 'ARG'
+      })
+    } as unknown as AlbumsRepository;
+    const service = new AlbumsService(repository);
+
+    const section = await service.updateSection({
+      accessToken: 'access-token',
+      albumId: 'album-id',
+      sectionId: 'section-id',
+      code: 'ARG'
+    });
+
+    expect(section.code).toBe('ARG');
+  });
 });

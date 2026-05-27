@@ -68,10 +68,15 @@ describe('catalog endpoints', () => {
     insertAlbum: vi.fn(),
     listAlbums: vi.fn(),
     getAlbum: vi.fn(),
+    updateAlbum: vi.fn(),
     insertAlbumSection: vi.fn(),
     listAlbumSections: vi.fn(),
+    updateAlbumSection: vi.fn(),
+    deleteAlbumSection: vi.fn(),
     insertSticker: vi.fn(),
-    listStickers: vi.fn()
+    listStickers: vi.fn(),
+    updateSticker: vi.fn(),
+    deleteSticker: vi.fn()
   };
   const supabaseService = {
     createAuthClient: vi.fn(),
@@ -99,10 +104,15 @@ describe('catalog endpoints', () => {
     userClient.insertAlbum.mockResolvedValue(albumRow);
     userClient.listAlbums.mockResolvedValue([albumRow]);
     userClient.getAlbum.mockResolvedValue(albumRow);
+    userClient.updateAlbum.mockResolvedValue(albumRow);
     userClient.insertAlbumSection.mockResolvedValue(sectionRow);
     userClient.listAlbumSections.mockResolvedValue([sectionRow]);
+    userClient.updateAlbumSection.mockResolvedValue(sectionRow);
+    userClient.deleteAlbumSection.mockResolvedValue(undefined);
     userClient.insertSticker.mockResolvedValue(stickerRow);
     userClient.listStickers.mockResolvedValue([stickerRow]);
+    userClient.updateSticker.mockResolvedValue(stickerRow);
+    userClient.deleteSticker.mockResolvedValue(undefined);
   });
 
   afterAll(async () => {
@@ -174,6 +184,70 @@ describe('catalog endpoints', () => {
       code: 'BRA01',
       limit: 5,
       offset: 10
+    });
+  });
+
+  it('updates album, section, sticker and archives album through admin endpoints', async () => {
+    const request = { user };
+
+    await albumsController.updateAlbum(request, albumId, {
+      name: 'World Football Updated'
+    });
+    await albumsController.updateAlbumStatus(request, albumId, {
+      status: 'published'
+    });
+    await albumsController.updateSection(request, albumId, sectionId, {
+      code: ' arg '
+    });
+    await stickersController.updateSticker(request, albumId, stickerId, {
+      code: ' arg01 '
+    });
+    await albumsController.archiveAlbum(request, albumId);
+
+    expect(userClient.updateAlbum).toHaveBeenCalledWith({
+      accessToken: 'access-token',
+      albumId,
+      name: 'World Football Updated'
+    });
+    expect(userClient.updateAlbum).toHaveBeenCalledWith({
+      accessToken: 'access-token',
+      albumId,
+      status: 'published'
+    });
+    expect(userClient.updateAlbumSection).toHaveBeenCalledWith({
+      accessToken: 'access-token',
+      albumId,
+      sectionId,
+      code: 'ARG'
+    });
+    expect(userClient.updateSticker).toHaveBeenCalledWith({
+      accessToken: 'access-token',
+      albumId,
+      stickerId,
+      code: 'ARG01'
+    });
+    expect(userClient.updateAlbum).toHaveBeenCalledWith({
+      accessToken: 'access-token',
+      albumId,
+      status: 'archived'
+    });
+  });
+
+  it('deletes sections and stickers through admin endpoints', async () => {
+    const request = { user };
+
+    await albumsController.deleteSection(request, albumId, sectionId);
+    await stickersController.deleteSticker(request, albumId, stickerId);
+
+    expect(userClient.deleteAlbumSection).toHaveBeenCalledWith({
+      accessToken: 'access-token',
+      albumId,
+      sectionId
+    });
+    expect(userClient.deleteSticker).toHaveBeenCalledWith({
+      accessToken: 'access-token',
+      albumId,
+      stickerId
     });
   });
 });

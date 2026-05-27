@@ -11,10 +11,14 @@ import type {
   AlbumPage,
   AlbumSectionKind,
   AlbumSectionSummary,
+  AlbumStatus,
   AlbumSummary,
   CreateAlbumInput,
   CreateAlbumSectionInput,
-  PageQuery
+  PageQuery,
+  UpdateAlbumInput,
+  UpdateAlbumSectionInput,
+  UpdateAlbumStatusInput
 } from './albums.types.js';
 
 @Injectable()
@@ -88,13 +92,69 @@ export class AlbumsService {
     }
   }
 
+  public async updateAlbum(input: UpdateAlbumInput): Promise<AlbumSummary> {
+    try {
+      const album = await this.albumsRepository.updateAlbum(input);
+
+      return this.mapAlbum(album);
+    } catch (error) {
+      throw mapSupabaseError(error);
+    }
+  }
+
+  public async updateAlbumStatus(
+    input: UpdateAlbumStatusInput
+  ): Promise<AlbumSummary> {
+    try {
+      const album = await this.albumsRepository.updateAlbumStatus(input);
+
+      return this.mapAlbum(album);
+    } catch (error) {
+      throw mapSupabaseError(error);
+    }
+  }
+
+  public archiveAlbum(input: {
+    readonly accessToken: string;
+    readonly albumId: string;
+  }): Promise<AlbumSummary> {
+    return this.updateAlbumStatus({
+      ...input,
+      status: 'archived'
+    });
+  }
+
+  public async updateSection(
+    input: UpdateAlbumSectionInput
+  ): Promise<AlbumSectionSummary> {
+    try {
+      const section = await this.albumsRepository.updateSection(input);
+
+      return this.mapSection(section);
+    } catch (error) {
+      throw mapSupabaseError(error);
+    }
+  }
+
+  public async deleteSection(input: {
+    readonly accessToken: string;
+    readonly albumId: string;
+    readonly sectionId: string;
+  }): Promise<void> {
+    try {
+      await this.albumsRepository.deleteSection(input);
+    } catch (error) {
+      throw mapSupabaseError(error);
+    }
+  }
+
   private mapAlbum(album: SupabaseAlbumRow): AlbumSummary {
     return {
       id: album.id,
       name: album.name,
       edition: album.edition,
       description: album.description,
-      status: album.status,
+      status: album.status as AlbumStatus,
       createdBy: album.created_by,
       createdAt: album.created_at,
       updatedAt: album.updated_at

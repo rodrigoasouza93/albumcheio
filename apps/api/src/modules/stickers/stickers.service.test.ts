@@ -104,4 +104,30 @@ describe('StickersService', () => {
       })
     ).rejects.toThrow(ConflictException);
   });
+
+  it('updates stickers through repository', async () => {
+    const updateSticker = vi.fn().mockResolvedValue({
+      ...stickerRow,
+      code: 'ARG01'
+    });
+    const repository = {
+      updateSticker
+    } as unknown as StickersRepository;
+    const service = new StickersService(repository);
+
+    const sticker = await service.updateSticker({
+      accessToken: 'access-token',
+      albumId: 'album-id',
+      stickerId: 'sticker-id',
+      code: 'ARG01'
+    });
+
+    expect(updateSticker).toHaveBeenCalledWith({
+      accessToken: 'access-token',
+      albumId: 'album-id',
+      stickerId: 'sticker-id',
+      code: 'ARG01'
+    });
+    expect(sticker.code).toBe('ARG01');
+  });
 });

@@ -8,7 +8,10 @@ import type {
 import type {
   CreateAlbumInput,
   CreateAlbumSectionInput,
-  PageQuery
+  PageQuery,
+  UpdateAlbumInput,
+  UpdateAlbumSectionInput,
+  UpdateAlbumStatusInput
 } from '../albums.types.js';
 
 @Injectable()
@@ -43,6 +46,20 @@ export class AlbumsRepository {
     return this.supabaseService.createUserClient(accessToken).getAlbum(albumId);
   }
 
+  public updateAlbum(input: UpdateAlbumInput): Promise<SupabaseAlbumRow> {
+    return this.supabaseService
+      .createUserClient(input.accessToken)
+      .updateAlbum(input);
+  }
+
+  public updateAlbumStatus(
+    input: UpdateAlbumStatusInput
+  ): Promise<SupabaseAlbumRow> {
+    return this.supabaseService
+      .createUserClient(input.accessToken)
+      .updateAlbum(input);
+  }
+
   public createSection(
     input: CreateAlbumSectionInput
   ): Promise<SupabaseAlbumSectionRow> {
@@ -58,5 +75,23 @@ export class AlbumsRepository {
     return this.supabaseService
       .createUserClient(accessToken)
       .listAlbumSections(albumId);
+  }
+
+  public updateSection(
+    input: UpdateAlbumSectionInput
+  ): Promise<SupabaseAlbumSectionRow> {
+    return this.supabaseService
+      .createUserClient(input.accessToken)
+      .updateAlbumSection(input);
+  }
+
+  public deleteSection(input: {
+    readonly accessToken: string;
+    readonly albumId: string;
+    readonly sectionId: string;
+  }): Promise<void> {
+    return this.supabaseService
+      .createUserClient(input.accessToken)
+      .deleteAlbumSection(input);
   }
 }
