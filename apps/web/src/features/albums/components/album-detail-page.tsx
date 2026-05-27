@@ -10,6 +10,8 @@ import { CollectionDashboard } from '@web/features/collection/components/collect
 import type {
   AlbumDetail,
   AlbumSectionSummary,
+  AlbumStatus,
+  AlbumSummary,
   CreateAlbumSectionInput,
   CreateStickerInput,
   StickerSummary
@@ -19,7 +21,8 @@ import {
   createAlbumSection,
   createSticker,
   getAlbumDetail,
-  listStickers
+  listStickers,
+  updateAlbumStatus
 } from '@web/lib/api/http-client';
 
 import { CatalogSummary } from './catalog-summary';
@@ -32,6 +35,14 @@ interface AlbumDetailPageProps {
 
 const getAlbumErrorMessage = (error: unknown): string => {
   if (error instanceof ApiError) {
+    if (error.status === 403) {
+      return 'Seu perfil não tem permissão para acessar este álbum.';
+    }
+
+    if (error.status === 404) {
+      return 'Este álbum não está disponível para o seu perfil.';
+    }
+
     return error.message;
   }
 
@@ -39,6 +50,18 @@ const getAlbumErrorMessage = (error: unknown): string => {
 };
 
 const STICKER_PAGE_LIMIT = 100;
+
+const albumStatusLabels: Readonly<Record<AlbumStatus, string>> = {
+  draft: 'Rascunho',
+  published: 'Publicado',
+  archived: 'Arquivado'
+};
+
+const albumStatusDescriptions: Readonly<Record<AlbumStatus, string>> = {
+  draft: 'Inativo para usuários comuns.',
+  published: 'Disponível para usuários comuns.',
+  archived: 'Arquivado e fora da listagem comum.'
+};
 
 const getNextSortOrder = (
   items: readonly { readonly sortOrder: number }[]
@@ -77,6 +100,7 @@ const listAllStickers = async (input: {
 export function AlbumDetailPage({ albumId }: AlbumDetailPageProps) {
   const { clearSession, session } = useSession();
   const accessToken = session?.accessToken;
+  const isAdmin = session?.user.role === 'admin';
   const [album, setAlbum] = useState<AlbumDetail | null>(null);
   const [stickers, setStickers] = useState<readonly StickerSummary[]>([]);
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>(
@@ -88,7 +112,11 @@ export function AlbumDetailPage({ albumId }: AlbumDetailPageProps) {
   const [stickerStatus, setStickerStatus] = useState<'idle' | 'submitting'>(
     'idle'
   );
+  const [publicationStatus, setPublicationStatus] = useState<
+    'idle' | 'submitting'
+  >('idle');
   const [errorMessage, setErrorMessage] = useState('');
+  const [publicationErrorMessage, setPublicationErrorMessage] = useState('');
 
   const loadAlbum = useCallback(async () => {
     if (!accessToken) {
@@ -201,6 +229,48 @@ export function AlbumDetailPage({ albumId }: AlbumDetailPageProps) {
     }
   };
 
+  const handleUpdateAlbumStatus = async (
+    nextStatus: AlbumStatus
+  ): Promise<AlbumSummary> => {
+    if (!accessToken) {
+      throw new ApiError(401, 'Autenticação obrigatória.', []);
+    }
+
+    setPublicationStatus('submitting');
+    setPublicationErrorMessage('');
+
+    try {
+      const updatedAlbum = await updateAlbumStatus({
+        token: accessToken,
+        albumId,
+        status: {
+          status: nextStatus
+        }
+      });
+
+      setAlbum((currentAlbum) =>
+        currentAlbum
+          ? {
+              ...currentAlbum,
+              ...updatedAlbum,
+              sections: currentAlbum.sections
+            }
+          : currentAlbum
+      );
+
+      return updatedAlbum;
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 401) {
+        clearSession();
+      }
+
+      setPublicationErrorMessage(getAlbumErrorMessage(error));
+      throw error;
+    } finally {
+      setPublicationStatus('idle');
+    }
+  };
+
   return (
     <ProtectedRoute>
       <AuthenticatedShell>
@@ -228,6 +298,55 @@ export function AlbumDetailPage({ albumId }: AlbumDetailPageProps) {
                   <p className="mt-4 max-w-3xl text-base leading-7 text-slate-700">
                     {album.description}
                   </p>
+                ) : null}
+                {isAdmin ? (
+                  <div className="mt-4 flex flex-col gap-3 rounded-xl border border-line bg-white px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <p className="text-sm font-semibold text-ink">
+                        Status: {albumStatusLabels[album.status]}
+                      </p>
+                      <p className="mt-1 text-sm text-slate-600">
+                        {albumStatusDescriptions[album.status]}
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        className="min-h-11 rounded-lg bg-ocean px-4 py-2 text-sm font-semibold text-white transition hover:bg-teal-800 focus:outline-none focus:ring-2 focus:ring-gold focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+                        disabled={
+                          album.status === 'published' ||
+                          publicationStatus === 'submitting'
+                        }
+                        onClick={() =>
+                          void handleUpdateAlbumStatus('published').catch(
+                            () => undefined
+                          )
+                        }
+                      >
+                        Publicar
+                      </button>
+                      <button
+                        type="button"
+                        className="min-h-11 rounded-lg border border-line bg-white px-4 py-2 text-sm font-semibold text-ink transition hover:bg-paper focus:outline-none focus:ring-2 focus:ring-gold focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+                        disabled={
+                          album.status === 'draft' ||
+                          publicationStatus === 'submitting'
+                        }
+                        onClick={() =>
+                          void handleUpdateAlbumStatus('draft').catch(
+                            () => undefined
+                          )
+                        }
+                      >
+                        Despublicar
+                      </button>
+                    </div>
+                    {publicationErrorMessage ? (
+                      <p className="text-sm font-semibold text-danger sm:basis-full">
+                        {publicationErrorMessage}
+                      </p>
+                    ) : null}
+                  </div>
                 ) : null}
               </div>
             ) : null}
@@ -261,28 +380,32 @@ export function AlbumDetailPage({ albumId }: AlbumDetailPageProps) {
 
           {status === 'ready' && album ? (
             <>
-              <div className="grid gap-6 lg:grid-cols-2">
-                <CreateSectionForm
-                  isDisabled={false}
-                  isSubmitting={sectionStatus === 'submitting'}
-                  nextSortOrder={getNextSortOrder(album.sections)}
-                  onCreateSection={handleCreateSection}
-                />
-                <CreateStickerForm
-                  isSubmitting={stickerStatus === 'submitting'}
-                  nextSortOrder={getNextSortOrder(stickers)}
-                  sections={album.sections}
-                  onCreateSticker={handleCreateSticker}
-                />
-              </div>
+              {isAdmin ? (
+                <div className="grid gap-6 lg:grid-cols-2">
+                  <CreateSectionForm
+                    isDisabled={false}
+                    isSubmitting={sectionStatus === 'submitting'}
+                    nextSortOrder={getNextSortOrder(album.sections)}
+                    onCreateSection={handleCreateSection}
+                  />
+                  <CreateStickerForm
+                    isSubmitting={stickerStatus === 'submitting'}
+                    nextSortOrder={getNextSortOrder(stickers)}
+                    sections={album.sections}
+                    onCreateSticker={handleCreateSticker}
+                  />
+                </div>
+              ) : null}
 
-              <CollectionDashboard
-                albumId={albumId}
-                sections={album.sections}
-                stickers={stickers}
-                token={accessToken ?? ''}
-                onUnauthorized={clearSession}
-              />
+              {!isAdmin ? (
+                <CollectionDashboard
+                  albumId={albumId}
+                  sections={album.sections}
+                  stickers={stickers}
+                  token={accessToken ?? ''}
+                  onUnauthorized={clearSession}
+                />
+              ) : null}
 
               <CatalogSummary sections={album.sections} stickers={stickers} />
             </>

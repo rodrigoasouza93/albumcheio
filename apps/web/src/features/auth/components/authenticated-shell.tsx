@@ -13,6 +13,7 @@ interface AuthenticatedShellProps {
 export function AuthenticatedShell({ children }: AuthenticatedShellProps) {
   const router = useRouter();
   const { logout, session } = useSession();
+  const isAdmin = session?.user.role === 'admin';
 
   const handleLogout = async () => {
     await logout();
@@ -44,6 +45,11 @@ export function AuthenticatedShell({ children }: AuthenticatedShellProps) {
               <span className="font-semibold text-ink">
                 {session?.user.name ?? 'Colecionador'}
               </span>
+              {isAdmin ? (
+                <span className="ml-2 rounded-lg border border-ocean px-2 py-1 text-xs font-semibold uppercase text-ocean">
+                  Admin
+                </span>
+              ) : null}
             </p>
             <button
               type="button"

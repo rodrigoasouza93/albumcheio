@@ -21,9 +21,18 @@ const storedSession = {
   user: {
     id: 'user-id',
     name: 'Ada Lovelace',
+    role: 'user',
     email: 'ada@example.com',
     createdAt: '2026-01-01T00:00:00.000Z',
     updatedAt: '2026-01-01T00:00:00.000Z'
+  }
+};
+
+const adminSession = {
+  ...storedSession,
+  user: {
+    ...storedSession.user,
+    role: 'admin'
   }
 };
 
@@ -57,7 +66,7 @@ describe('AlbumsPage', () => {
                   name: 'World Cup 2026',
                   edition: 'Panini',
                   description: 'Main tournament album',
-                  status: 'active',
+                  status: 'published',
                   createdBy: 'user-id',
                   createdAt: '2026-01-01T00:00:00.000Z',
                   updatedAt: '2026-01-01T00:00:00.000Z'
@@ -88,6 +97,10 @@ describe('AlbumsPage', () => {
     expect(
       screen.getByRole('link', { name: /World Cup 2026/i })
     ).toHaveAttribute('href', '/albums/album-id');
+    expect(screen.queryByText('Publicado')).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Criar álbum' })
+    ).not.toBeInTheDocument();
     await waitFor(() => expect(replaceMock).not.toHaveBeenCalledWith('/'));
   });
 
@@ -131,14 +144,19 @@ describe('AlbumsPage', () => {
     expect(
       await screen.findByRole('heading', { name: 'Nenhum álbum ainda' })
     ).toBeVisible();
+    expect(
+      screen.getByText(
+        'Nenhum álbum publicado está disponível para sua coleção neste momento.'
+      )
+    ).toBeVisible();
   });
 
-  it('creates an album and updates the list', async () => {
-    localStorage.setItem('albumcheio.session', JSON.stringify(storedSession));
+  it('shows administrative controls and creates an album for admins', async () => {
+    localStorage.setItem('albumcheio.session', JSON.stringify(adminSession));
     const fetchMock = vi
       .fn()
       .mockResolvedValueOnce(
-        new Response(JSON.stringify(storedSession.user), {
+        new Response(JSON.stringify(adminSession.user), {
           status: 200,
           headers: {
             'content-type': 'application/json'
@@ -167,7 +185,7 @@ describe('AlbumsPage', () => {
             name: 'Copa America 2028',
             edition: 'Collectors',
             description: 'Manual catalog',
-            status: 'active',
+            status: 'draft',
             createdBy: 'user-id',
             createdAt: '2026-01-01T00:00:00.000Z',
             updatedAt: '2026-01-01T00:00:00.000Z'
@@ -191,6 +209,11 @@ describe('AlbumsPage', () => {
     expect(
       await screen.findByRole('heading', { name: 'Nenhum álbum ainda' })
     ).toBeVisible();
+    expect(
+      screen.getByText(
+        'Os álbuns criados aparecerão aqui. Quando houver um álbum, abra-o para conferir as seções cadastradas.'
+      )
+    ).toBeVisible();
 
     fireEvent.change(screen.getByLabelText('Nome do álbum'), {
       target: { value: 'Copa America 2028' }
@@ -209,6 +232,7 @@ describe('AlbumsPage', () => {
     expect(
       screen.getByRole('link', { name: /Copa America 2028/i })
     ).toHaveAttribute('href', '/albums/created-album-id');
+    expect(screen.getByText('Rascunho')).toBeVisible();
     expect(fetchMock).toHaveBeenLastCalledWith(
       'http://localhost:3001/api/v1/albums',
       expect.objectContaining({

@@ -19,9 +19,18 @@ const storedSession = {
   user: {
     id: 'user-id',
     name: 'Ada Lovelace',
+    role: 'admin',
     email: 'ada@example.com',
     createdAt: '2026-01-01T00:00:00.000Z',
     updatedAt: '2026-01-01T00:00:00.000Z'
+  }
+};
+
+const userSession = {
+  ...storedSession,
+  user: {
+    ...storedSession.user,
+    role: 'user'
   }
 };
 
@@ -52,7 +61,7 @@ describe('AlbumDetailPage', () => {
               name: 'World Cup 2026',
               edition: 'Panini',
               description: 'Main tournament album',
-              status: 'active',
+              status: 'published',
               createdBy: 'user-id',
               createdAt: '2026-01-01T00:00:00.000Z',
               updatedAt: '2026-01-01T00:00:00.000Z',
@@ -118,6 +127,8 @@ describe('AlbumDetailPage', () => {
     expect(screen.getByRole('heading', { name: 'Brazil' })).toBeVisible();
     expect(screen.getByText('BRA01')).toBeVisible();
     expect(screen.getByText('Time')).toBeVisible();
+    expect(screen.getByText('Status: Publicado')).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Despublicar' })).toBeVisible();
   });
 
   it('creates sections and stickers without reloading the page', async () => {
@@ -139,7 +150,7 @@ describe('AlbumDetailPage', () => {
             name: 'World Cup 2026',
             edition: 'Panini',
             description: 'Main tournament album',
-            status: 'active',
+            status: 'draft',
             createdBy: 'user-id',
             createdAt: '2026-01-01T00:00:00.000Z',
             updatedAt: '2026-01-01T00:00:00.000Z',
@@ -268,7 +279,7 @@ describe('AlbumDetailPage', () => {
               name: 'World Cup 2026',
               edition: 'Panini',
               description: 'Main tournament album',
-              status: 'active',
+            status: 'published',
               createdBy: 'user-id',
               createdAt: '2026-01-01T00:00:00.000Z',
               updatedAt: '2026-01-01T00:00:00.000Z',
@@ -338,5 +349,165 @@ describe('AlbumDetailPage', () => {
         'O código BRA01 já existe neste álbum. Revise o código ou escolha outro.'
       )
     ).toBeVisible();
+  });
+
+  it('hides catalog forms and shows collection controls for regular users', async () => {
+    localStorage.setItem('albumcheio.session', JSON.stringify(userSession));
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockResolvedValueOnce(
+          new Response(JSON.stringify(userSession.user), {
+            status: 200,
+            headers: {
+              'content-type': 'application/json'
+            }
+          })
+        )
+        .mockResolvedValueOnce(
+          new Response(
+            JSON.stringify({
+              id: 'album-id',
+              name: 'World Cup 2026',
+              edition: 'Panini',
+              description: 'Main tournament album',
+              status: 'published',
+              createdBy: 'user-id',
+              createdAt: '2026-01-01T00:00:00.000Z',
+              updatedAt: '2026-01-01T00:00:00.000Z',
+              sections: []
+            }),
+            {
+              status: 200,
+              headers: {
+                'content-type': 'application/json'
+              }
+            }
+          )
+        )
+        .mockResolvedValueOnce(
+          new Response(
+            JSON.stringify({
+              items: [],
+              limit: 100,
+              offset: 0
+            }),
+            {
+              status: 200,
+              headers: {
+                'content-type': 'application/json'
+              }
+            }
+          )
+        )
+    );
+
+    render(
+      <SessionProvider>
+        <AlbumDetailPage albumId="album-id" />
+      </SessionProvider>
+    );
+
+    expect(
+      await screen.findByRole('heading', { name: 'World Cup 2026' })
+    ).toBeVisible();
+    expect(screen.queryByLabelText('Nome da seção')).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Publicar' })
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Coleção' })).toBeVisible();
+  });
+
+  it('publishes draft albums from the admin controls', async () => {
+    localStorage.setItem('albumcheio.session', JSON.stringify(storedSession));
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify(storedSession.user), {
+          status: 200,
+          headers: {
+            'content-type': 'application/json'
+          }
+        })
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            id: 'album-id',
+            name: 'World Cup 2026',
+            edition: 'Panini',
+            description: 'Main tournament album',
+            status: 'draft',
+            createdBy: 'user-id',
+            createdAt: '2026-01-01T00:00:00.000Z',
+            updatedAt: '2026-01-01T00:00:00.000Z',
+            sections: []
+          }),
+          {
+            status: 200,
+            headers: {
+              'content-type': 'application/json'
+            }
+          }
+        )
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            items: [],
+            limit: 100,
+            offset: 0
+          }),
+          {
+            status: 200,
+            headers: {
+              'content-type': 'application/json'
+            }
+          }
+        )
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            id: 'album-id',
+            name: 'World Cup 2026',
+            edition: 'Panini',
+            description: 'Main tournament album',
+            status: 'published',
+            createdBy: 'user-id',
+            createdAt: '2026-01-01T00:00:00.000Z',
+            updatedAt: '2026-01-01T00:00:00.000Z'
+          }),
+          {
+            status: 200,
+            headers: {
+              'content-type': 'application/json'
+            }
+          }
+        )
+      );
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(
+      <SessionProvider>
+        <AlbumDetailPage albumId="album-id" />
+      </SessionProvider>
+    );
+
+    expect(await screen.findByText('Status: Rascunho')).toBeVisible();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Publicar' }));
+
+    expect(await screen.findByText('Status: Publicado')).toBeVisible();
+    expect(fetchMock).toHaveBeenLastCalledWith(
+      'http://localhost:3001/api/v1/albums/album-id/status',
+      expect.objectContaining({
+        method: 'PATCH',
+        body: JSON.stringify({
+          status: 'published'
+        })
+      })
+    );
   });
 });

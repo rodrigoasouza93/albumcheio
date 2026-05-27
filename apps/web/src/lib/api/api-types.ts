@@ -1,6 +1,11 @@
+export type ProfileRole = 'user' | 'admin';
+
+export type AlbumStatus = 'draft' | 'published' | 'archived';
+
 export interface UserProfile {
   readonly id: string;
   readonly name: string;
+  readonly role: ProfileRole;
   readonly email?: string | null;
   readonly createdAt: string;
   readonly updatedAt: string;
@@ -21,7 +26,7 @@ export interface AlbumSummary {
   readonly name: string;
   readonly edition: string | null;
   readonly description: string | null;
-  readonly status: string;
+  readonly status: AlbumStatus;
   readonly createdBy: string | null;
   readonly createdAt: string;
   readonly updatedAt: string;
@@ -52,6 +57,10 @@ export interface CreateAlbumInput {
   readonly name: string;
   readonly edition: string | null;
   readonly description: string | null;
+}
+
+export interface UpdateAlbumStatusInput {
+  readonly status: AlbumStatus;
 }
 
 export interface CreateAlbumSectionInput {

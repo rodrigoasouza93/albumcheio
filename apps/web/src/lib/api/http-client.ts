@@ -14,11 +14,12 @@ import type {
   StickerPage,
   StickerCollectionStatus,
   StickerSummary,
+  UpdateAlbumStatusInput,
   UserProfile
 } from './api-types';
 
 interface RequestOptions {
-  readonly method?: 'GET' | 'POST' | 'PATCH';
+  readonly method?: 'DELETE' | 'GET' | 'POST' | 'PATCH';
   readonly token?: string;
   readonly body?: unknown;
   readonly query?: Readonly<Record<string, string | number | undefined>>;
@@ -201,6 +202,17 @@ export const createAlbum = (input: {
     method: 'POST',
     token: input.token,
     body: input.album
+  });
+
+export const updateAlbumStatus = (input: {
+  readonly token: string;
+  readonly albumId: string;
+  readonly status: UpdateAlbumStatusInput;
+}): Promise<AlbumSummary> =>
+  requestApi<AlbumSummary>(`/albums/${input.albumId}/status`, {
+    method: 'PATCH',
+    token: input.token,
+    body: input.status
   });
 
 export const createAlbumSection = (input: {

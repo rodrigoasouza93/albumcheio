@@ -16,6 +16,7 @@ const authResponse = {
   user: {
     id: 'user-id',
     name: 'Ada Lovelace',
+    role: 'user',
     email: 'ada@example.com',
     createdAt: '2026-01-01T00:00:00.000Z',
     updatedAt: '2026-01-01T00:00:00.000Z'
@@ -94,6 +95,7 @@ describe('AuthForm', () => {
           JSON.stringify({
             id: 'user-id',
             name: 'Ada Lovelace',
+            role: 'user',
             email: 'ada@example.com',
             createdAt: '2026-01-01T00:00:00.000Z',
             updatedAt: '2026-01-01T00:00:00.000Z'
