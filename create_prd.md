@@ -153,12 +153,6 @@ Os detalhes de implementação serão tratados na Especificação Técnica.]
 ---
 
 <prompt_base>
-Implemente um sistema web para gestão de figurinhas para albuns de campeonatos.
-
-A princípio vamos focar no Almbum da Copa Panini 2026, porém o sitema deve ser aberto para cadastrar o Álbum de qualquer campeonato.
-Existem figurinhas da Fifa e das seleções cada figurinha possui um código e um número.
-no caso Fifa ficaria FWC01 para a primeira figurinha, ou BRA01 para figurinha do Brasil.
-A ideia seria registrar as figurinhas que o usuário possui no Álbum para que ele possa ter uma visão que é asber quais figurinhas ele ainda não tem.
-importante também o usuário poder registrar as figurinhas que ele possui repetida, que estariam disponíveis para troca.
+adicione aqui o prompt
 </prompt_base>
 ```

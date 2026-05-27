@@ -14,6 +14,13 @@ const section = {
   createdAt: timestamp,
   updatedAt: timestamp
 };
+const earlierSection = {
+  ...section,
+  id: 'earlier-section-id',
+  name: 'Argentina',
+  code: 'ARG',
+  sortOrder: 5
+};
 const sticker = {
   id: 'sticker-id',
   albumId: 'album-id',
@@ -35,6 +42,24 @@ const missingSticker = {
   sortOrder: 20,
   createdAt: timestamp,
   updatedAt: timestamp
+};
+const initialProgress = {
+  albumId: 'album-id',
+  total: 2,
+  owned: 1,
+  missing: 1,
+  percentage: 50,
+  sections: [
+    {
+      sectionId: 'section-id',
+      sectionCode: 'BRA',
+      sectionName: 'Brazil',
+      total: 2,
+      owned: 1,
+      missing: 1,
+      percentage: 50
+    }
+  ]
 };
 
 const createJsonResponse = (body: unknown, status = 200) =>
@@ -81,72 +106,84 @@ describe('CollectionDashboard', () => {
     vi.restoreAllMocks();
   });
 
-  it('renders progress, statuses, missing stickers and repeated stickers', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn((url: string | URL | Request) => {
-        const requestUrl = getRequestUrl(url);
+  it('renders initial progress and loads lists after section selection', async () => {
+    const fetchMock = vi.fn((url: string | URL | Request) => {
+      const requestUrl = getRequestUrl(url);
 
-        if (requestUrl.pathname.endsWith('/collection/search')) {
-          const code = requestUrl.searchParams.get('code');
+      if (requestUrl.pathname.endsWith('/collection/search')) {
+        const code = requestUrl.searchParams.get('code');
 
-          return createJsonResponse({
-            albumId: 'album-id',
-            code,
-            status: code === 'BRA01' ? 'duplicate' : 'missing',
-            sticker: code === 'BRA01' ? sticker : missingSticker,
-            quantityTotal: code === 'BRA01' ? 3 : 0,
-            owned: code === 'BRA01',
-            duplicateCount: code === 'BRA01' ? 2 : 0
-          });
-        }
+        return createJsonResponse({
+          albumId: 'album-id',
+          code,
+          status: code === 'BRA01' ? 'duplicate' : 'missing',
+          sticker: code === 'BRA01' ? sticker : missingSticker,
+          quantityTotal: code === 'BRA01' ? 3 : 0,
+          owned: code === 'BRA01',
+          duplicateCount: code === 'BRA01' ? 2 : 0
+        });
+      }
 
-        if (requestUrl.pathname.endsWith('/progress')) {
-          return createJsonResponse({
-            albumId: 'album-id',
-            total: 2,
-            owned: 1,
-            missing: 1,
-            percentage: 50,
-            sections: [
-              {
-                sectionId: 'section-id',
-                sectionCode: 'BRA',
-                sectionName: 'Brazil',
-                total: 2,
-                owned: 1,
-                missing: 1,
-                percentage: 50
-              }
-            ]
-          });
-        }
-
-        if (requestUrl.pathname.endsWith('/missing')) {
-          expect(requestUrl.searchParams.get('limit')).toBe('100');
-
-          return createJsonResponse({
-            items: [{ ...missingSticker, quantityTotal: 0, owned: false }],
-            limit: 100,
-            offset: 0
-          });
-        }
-
+      if (requestUrl.pathname.endsWith('/collection/stickers')) {
+        expect(requestUrl.searchParams.get('sectionId')).toBe('section-id');
         expect(requestUrl.searchParams.get('limit')).toBe('100');
 
         return createJsonResponse({
-          items: [{ ...sticker, quantityTotal: 3, duplicateCount: 2 }],
+          items: [
+            {
+              ...sticker,
+              quantityTotal: 3,
+              owned: true,
+              duplicateCount: 2,
+              status: 'duplicate'
+            },
+            {
+              ...missingSticker,
+              quantityTotal: 0,
+              owned: false,
+              duplicateCount: 0,
+              status: 'missing'
+            }
+          ],
           limit: 100,
           offset: 0
         });
-      })
+      }
+
+      if (requestUrl.pathname.endsWith('/progress')) {
+        return createJsonResponse(initialProgress);
+      }
+
+      if (requestUrl.pathname.endsWith('/missing')) {
+        expect(requestUrl.searchParams.get('limit')).toBe('100');
+        expect(requestUrl.searchParams.get('sectionId')).toBe('section-id');
+
+        return createJsonResponse({
+          items: [{ ...missingSticker, quantityTotal: 0, owned: false }],
+          limit: 100,
+          offset: 0
+        });
+      }
+
+      expect(requestUrl.searchParams.get('limit')).toBe('100');
+      expect(requestUrl.searchParams.get('sectionId')).toBe('section-id');
+
+      return createJsonResponse({
+        items: [{ ...sticker, quantityTotal: 3, duplicateCount: 2 }],
+        limit: 100,
+        offset: 0
+      });
+    });
+    vi.stubGlobal(
+      'fetch',
+      fetchMock
     );
 
     render(
       <CollectionDashboard
         albumId="album-id"
-        sections={[section]}
-        stickers={[sticker, missingSticker]}
+        initialProgress={initialProgress}
+        sections={[section, earlierSection]}
         token="access-token"
         onUnauthorized={vi.fn()}
       />
@@ -156,9 +193,36 @@ describe('CollectionDashboard', () => {
     expect(
       screen.getByText(/1 tenho, 1 faltando de 2 figurinhas/)
     ).toBeVisible();
-    expect(screen.getAllByText('Repetida')[0]).toBeVisible();
+
+    expect(
+      screen.getByText('Selecione uma seção para carregar as figurinhas.')
+    ).toBeVisible();
+    expect(fetchMock).not.toHaveBeenCalled();
+
+    const quantitySectionPicker = screen.getAllByLabelText('Seção')[0];
+    expect(
+      Array.from(quantitySectionPicker.querySelectorAll('option')).map(
+        (option) => option.textContent
+      )
+    ).toEqual([
+      'Selecione uma seção',
+      'Argentina',
+      'Brazil',
+      'Todas as seções'
+    ]);
+
+    fireEvent.change(quantitySectionPicker, {
+      target: { value: 'section-id' }
+    });
+
+    expect((await screen.findAllByText('Repetida'))[0]).toBeVisible();
     expect(screen.getAllByText('Faltando')[0]).toBeVisible();
-    expect(screen.getByText('BRA02 · Forward')).toBeVisible();
+
+    fireEvent.change(screen.getAllByLabelText('Seção')[1], {
+      target: { value: 'section-id' }
+    });
+
+    expect(await screen.findByText('BRA02 · Forward')).toBeVisible();
     expect(screen.getByText('BRA01 · Badge')).toBeVisible();
     expect(screen.getByText('2 disponíveis')).toBeVisible();
   });
@@ -260,14 +324,39 @@ describe('CollectionDashboard', () => {
     render(
       <CollectionDashboard
         albumId="album-id"
+        initialProgress={{
+          ...initialProgress,
+          total: 1,
+          owned: 1,
+          missing: 0,
+          percentage: 100,
+          sections: [
+            {
+              ...initialProgress.sections[0],
+              total: 1,
+              owned: 1,
+              missing: 0,
+              percentage: 100
+            }
+          ]
+        }}
         sections={[section]}
-        stickers={[sticker]}
         token="access-token"
         onUnauthorized={vi.fn()}
       />
     );
 
     expect((await screen.findAllByText('100%'))[0]).toBeVisible();
+
+    fireEvent.change(screen.getAllByLabelText('Seção')[0], {
+      target: { value: 'section-id' }
+    });
+
+    expect(await screen.findByDisplayValue('2')).toBeVisible();
+
+    fireEvent.change(screen.getAllByLabelText('Seção')[1], {
+      target: { value: 'section-id' }
+    });
 
     fireEvent.change(screen.getByLabelText('Código da figurinha'), {
       target: { value: 'ZZZ99' }
@@ -293,5 +382,82 @@ describe('CollectionDashboard', () => {
         screen.getByRole('heading', { name: 'Repetidas' }).parentElement!
       ).getByText('Nenhuma figurinha repetida neste filtro.')
     ).toBeVisible();
+  });
+
+  it('loads consolidated lists only after explicit all sections selection', async () => {
+    const requestedSectionIds: Array<string | null> = [];
+    const fetchMock = vi.fn((url: string | URL | Request) => {
+      const requestUrl = getRequestUrl(url);
+
+      if (
+        requestUrl.pathname.endsWith('/collection/stickers') ||
+        requestUrl.pathname.endsWith('/missing') ||
+        requestUrl.pathname.endsWith('/duplicates')
+      ) {
+        requestedSectionIds.push(requestUrl.searchParams.get('sectionId'));
+      }
+
+      if (requestUrl.pathname.endsWith('/progress')) {
+        return createJsonResponse(initialProgress);
+      }
+
+      if (requestUrl.pathname.endsWith('/collection/stickers')) {
+        return createJsonResponse({
+          items: [
+            {
+              ...sticker,
+              quantityTotal: 1,
+              owned: true,
+              duplicateCount: 0,
+              status: 'owned'
+            }
+          ],
+          limit: 100,
+          offset: 0
+        });
+      }
+
+      if (requestUrl.pathname.endsWith('/missing')) {
+        return createJsonResponse({
+          items: [],
+          limit: 100,
+          offset: 0
+        });
+      }
+
+      return createJsonResponse({
+        items: [],
+        limit: 100,
+        offset: 0
+      });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(
+      <CollectionDashboard
+        albumId="album-id"
+        initialProgress={initialProgress}
+        sections={[section]}
+        token="access-token"
+        onUnauthorized={vi.fn()}
+      />
+    );
+
+    expect(fetchMock).not.toHaveBeenCalled();
+
+    fireEvent.change(screen.getAllByLabelText('Seção')[0], {
+      target: { value: 'all' }
+    });
+
+    expect(await screen.findByText('BRA01')).toBeVisible();
+
+    fireEvent.change(screen.getAllByLabelText('Seção')[1], {
+      target: { value: 'all' }
+    });
+
+    expect(
+      await screen.findByText('Nenhuma figurinha faltando neste filtro.')
+    ).toBeVisible();
+    expect(requestedSectionIds).toEqual([null, null, null]);
   });
 });

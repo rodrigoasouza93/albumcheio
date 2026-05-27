@@ -58,8 +58,11 @@ describe('collection endpoints', () => {
     findStickerByCode: vi.fn(),
     getCollectionItem: vi.fn(),
     listAlbumStickersForCollection: vi.fn(),
+    listCollectionStickers: vi.fn(),
+    listCollectionItemsByStickerIds: vi.fn(),
     listAlbumCollectionItems: vi.fn(),
-    listAlbumSections: vi.fn()
+    listAlbumSections: vi.fn(),
+    getAlbumSection: vi.fn()
   };
   const supabaseService = {
     createAuthClient: vi.fn(),
@@ -88,6 +91,10 @@ describe('collection endpoints', () => {
     userClient.findStickerByCode.mockResolvedValue(stickerRow);
     userClient.getCollectionItem.mockResolvedValue(collectionItemRow);
     userClient.listAlbumStickersForCollection.mockResolvedValue([stickerRow]);
+    userClient.listCollectionStickers.mockResolvedValue([stickerRow]);
+    userClient.listCollectionItemsByStickerIds.mockResolvedValue([
+      collectionItemRow
+    ]);
     userClient.listAlbumCollectionItems.mockResolvedValue([collectionItemRow]);
     userClient.listAlbumSections.mockResolvedValue([
       {
@@ -101,6 +108,16 @@ describe('collection endpoints', () => {
         updated_at: timestamp
       }
     ]);
+    userClient.getAlbumSection.mockResolvedValue({
+      id: sectionId,
+      album_id: albumId,
+      name: 'Brazil',
+      code: 'BRA',
+      kind: 'team',
+      sort_order: 10,
+      created_at: timestamp,
+      updated_at: timestamp
+    });
   });
 
   afterAll(async () => {
@@ -151,6 +168,58 @@ describe('collection endpoints', () => {
       accessToken: userB.accessToken,
       userId: userB.id,
       albumId
+    });
+  });
+
+  it('lists collection stickers with section filter for authenticated user', async () => {
+    const response = await collectionsController.listCollectionStickers(
+      { user: userA },
+      albumId,
+      {
+        sectionId,
+        limit: '5',
+        offset: '0'
+      }
+    );
+
+    expect(response.items).toEqual([
+      expect.objectContaining({
+        id: stickerId,
+        quantityTotal: 2,
+        owned: true,
+        duplicateCount: 1,
+        status: 'duplicate'
+      })
+    ]);
+    expect(userClient.getAlbumSection).toHaveBeenCalledWith({
+      accessToken: userA.accessToken,
+      albumId,
+      sectionId
+    });
+    expect(userClient.listCollectionStickers).toHaveBeenCalledWith({
+      albumId,
+      sectionId,
+      limit: 5,
+      offset: 0
+    });
+    expect(userClient.listCollectionItemsByStickerIds).toHaveBeenCalledWith({
+      accessToken: userA.accessToken,
+      userId: userA.id,
+      stickerIds: [stickerId]
+    });
+  });
+
+  it('lists consolidated collection stickers without validating a section', async () => {
+    await collectionsController.listCollectionStickers({ user: userA }, albumId, {
+      limit: '5',
+      offset: '0'
+    });
+
+    expect(userClient.getAlbumSection).not.toHaveBeenCalled();
+    expect(userClient.listCollectionStickers).toHaveBeenCalledWith({
+      albumId,
+      limit: 5,
+      offset: 0
     });
   });
 });

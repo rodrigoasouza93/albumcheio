@@ -1,6 +1,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { listAlbums, requestApi, updateAlbumStatus } from './http-client';
+import {
+  listAlbums,
+  listCollectionStickers,
+  requestApi,
+  updateAlbumStatus
+} from './http-client';
 
 describe('http client', () => {
   afterEach(() => {
@@ -102,5 +107,40 @@ describe('http client', () => {
     expect(options.method).toBe('PATCH');
     expect(headers.get('authorization')).toBe('Bearer access-token');
     expect(options.body).toBe(JSON.stringify({ status: 'published' }));
+  });
+
+  it('requests collection stickers on demand with pagination', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          items: [],
+          limit: 25,
+          offset: 50
+        }),
+        {
+          status: 200,
+          headers: {
+            'content-type': 'application/json'
+          }
+        }
+      )
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    await listCollectionStickers({
+      token: 'access-token',
+      albumId: 'album-id',
+      sectionId: 'section-id',
+      limit: 25,
+      offset: 50
+    });
+
+    const [url, options] = fetchMock.mock.calls[0] as [string, RequestInit];
+    const headers = options.headers as Headers;
+
+    expect(url).toBe(
+      'http://localhost:3001/api/v1/albums/album-id/collection/stickers?sectionId=section-id&limit=25&offset=50'
+    );
+    expect(headers.get('authorization')).toBe('Bearer access-token');
   });
 });

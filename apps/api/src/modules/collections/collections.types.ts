@@ -54,6 +54,12 @@ export interface CollectionListInput {
   readonly query: CollectionPageQuery;
 }
 
+export interface CollectionStickerListInput {
+  readonly accessToken: string;
+  readonly userId: string;
+  readonly query: CollectionPageQuery;
+}
+
 export interface CollectionProgressInput {
   readonly accessToken: string;
   readonly userId: string;
@@ -89,6 +95,13 @@ export interface DuplicateStickerSummary extends StickerSummary {
   readonly duplicateCount: number;
 }
 
+export interface CollectionStickerSummary extends StickerSummary {
+  readonly quantityTotal: number;
+  readonly owned: boolean;
+  readonly duplicateCount: number;
+  readonly status: CollectionSearchStatus;
+}
+
 export interface MissingStickerPage {
   readonly items: readonly MissingStickerSummary[];
   readonly limit: number;
@@ -97,6 +110,12 @@ export interface MissingStickerPage {
 
 export interface DuplicateStickerPage {
   readonly items: readonly DuplicateStickerSummary[];
+  readonly limit: number;
+  readonly offset: number;
+}
+
+export interface CollectionStickerPage {
+  readonly items: readonly CollectionStickerSummary[];
   readonly limit: number;
   readonly offset: number;
 }

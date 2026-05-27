@@ -1,18 +1,19 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 import type {
   AlbumProgress,
   AlbumSectionSummary,
+  CollectionStickerSummary,
   DuplicateStickerSummary,
   MissingStickerSummary,
-  StickerCollectionStatus,
-  StickerSummary
+  StickerCollectionStatus
 } from '@web/lib/api/api-types';
 import {
   ApiError,
   getAlbumProgress,
+  listCollectionStickers,
   listDuplicateStickers,
   listMissingStickers,
   searchCollectionSticker,
@@ -24,22 +25,20 @@ import { ProgressSummary } from './progress-summary';
 import { StickerQuantityList } from './sticker-quantity-list';
 import { StickerSearch } from './sticker-search';
 import {
-  createQuantityMap,
-  createStickerViews,
   getDuplicateCount,
-  getFallbackProgress,
   getStickerStatus
 } from '../lib/collection-status';
 
 interface CollectionDashboardProps {
   readonly albumId: string;
+  readonly initialProgress: AlbumProgress;
   readonly sections: readonly AlbumSectionSummary[];
-  readonly stickers: readonly StickerSummary[];
   readonly token: string;
   readonly onUnauthorized: () => void;
 }
 
 const SUMMARY_PAGE_LIMIT = 100;
+const COLLECTION_STICKER_PAGE_LIMIT = 100;
 
 const getCollectionErrorMessage = (error: unknown): string => {
   if (error instanceof ApiError) {
@@ -52,147 +51,133 @@ const getCollectionErrorMessage = (error: unknown): string => {
 const getSectionIdQuery = (sectionId: string): string | undefined =>
   sectionId === 'all' ? undefined : sectionId;
 
-const listAllMissingStickers = async (input: {
+const listMissingStickerPage = async (input: {
   readonly albumId: string;
-  readonly offset?: number;
   readonly sectionId?: string;
   readonly token: string;
 }): Promise<readonly MissingStickerSummary[]> => {
-  const offset = input.offset ?? 0;
   const missingPage = await listMissingStickers({
     token: input.token,
     albumId: input.albumId,
     sectionId: input.sectionId,
     limit: SUMMARY_PAGE_LIMIT,
-    offset
+    offset: 0
   });
 
-  if (missingPage.items.length < SUMMARY_PAGE_LIMIT) {
-    return missingPage.items;
-  }
-
-  return [
-    ...missingPage.items,
-    ...(await listAllMissingStickers({
-      token: input.token,
-      albumId: input.albumId,
-      sectionId: input.sectionId,
-      offset: offset + SUMMARY_PAGE_LIMIT
-    }))
-  ];
+  return missingPage.items;
 };
 
-const listAllDuplicateStickers = async (input: {
+const listDuplicateStickerPage = async (input: {
   readonly albumId: string;
-  readonly offset?: number;
   readonly sectionId?: string;
   readonly token: string;
 }): Promise<readonly DuplicateStickerSummary[]> => {
-  const offset = input.offset ?? 0;
   const duplicatePage = await listDuplicateStickers({
     token: input.token,
     albumId: input.albumId,
     sectionId: input.sectionId,
     limit: SUMMARY_PAGE_LIMIT,
-    offset
+    offset: 0
   });
 
-  if (duplicatePage.items.length < SUMMARY_PAGE_LIMIT) {
-    return duplicatePage.items;
-  }
-
-  return [
-    ...duplicatePage.items,
-    ...(await listAllDuplicateStickers({
-      token: input.token,
-      albumId: input.albumId,
-      sectionId: input.sectionId,
-      offset: offset + SUMMARY_PAGE_LIMIT
-    }))
-  ];
+  return duplicatePage.items;
 };
 
 export function CollectionDashboard({
   albumId,
+  initialProgress,
   sections,
-  stickers,
   token,
   onUnauthorized
 }: CollectionDashboardProps) {
-  const [progress, setProgress] = useState<AlbumProgress>(
-    getFallbackProgress(albumId, sections)
+  const [progressOverride, setProgressOverride] = useState<AlbumProgress | null>(
+    null
   );
   const [missing, setMissing] = useState<readonly MissingStickerSummary[]>([]);
   const [duplicates, setDuplicates] = useState<
     readonly DuplicateStickerSummary[]
   >([]);
-  const [quantities, setQuantities] = useState<ReadonlyMap<string, number>>(
-    new Map()
-  );
-  const [status, setStatus] = useState<'loading' | 'ready' | 'error'>(
-    'loading'
-  );
+  const [collectionStickers, setCollectionStickers] = useState<
+    readonly CollectionStickerSummary[]
+  >([]);
+  const [status, setStatus] = useState<'ready' | 'error'>('ready');
+  const [quantityStatus, setQuantityStatus] = useState<
+    'idle' | 'loading' | 'ready'
+  >('idle');
+  const [summaryStatus, setSummaryStatus] = useState<
+    'idle' | 'loading' | 'ready'
+  >('idle');
   const [errorMessage, setErrorMessage] = useState('');
   const [searchStatus, setSearchStatus] = useState<'idle' | 'searching'>(
     'idle'
   );
   const [searchResult, setSearchResult] =
     useState<StickerCollectionStatus | null>(null);
-  const [quantitySectionId, setQuantitySectionId] = useState('all');
-  const [summarySectionId, setSummarySectionId] = useState('all');
+  const [quantitySectionId, setQuantitySectionId] = useState('');
+  const [summarySectionId, setSummarySectionId] = useState('');
   const [updatingStickerId, setUpdatingStickerId] = useState<string | null>(
     null
   );
 
   const refreshSummary = useCallback(
     async (sectionId: string) => {
+      setSummaryStatus('loading');
       const [albumProgress, missingPage, duplicatePage] = await Promise.all([
         getAlbumProgress({ token, albumId }),
-        listAllMissingStickers({
+        listMissingStickerPage({
           token,
           albumId,
           sectionId: getSectionIdQuery(sectionId)
         }),
-        listAllDuplicateStickers({
+        listDuplicateStickerPage({
           token,
           albumId,
           sectionId: getSectionIdQuery(sectionId)
         })
       ]);
 
-      setProgress(albumProgress);
+      setProgressOverride(albumProgress);
       setMissing(missingPage);
       setDuplicates(duplicatePage);
+      setSummaryStatus('ready');
     },
     [albumId, token]
   );
 
-  const loadCollection = useCallback(async () => {
-    if (stickers.length === 0) {
-      setProgress(getFallbackProgress(albumId, sections));
-      setMissing([]);
-      setDuplicates([]);
-      setQuantities(new Map());
-      setStatus('ready');
-      return;
-    }
+  const progress = progressOverride ?? initialProgress;
 
-    setStatus('loading');
+  const stickerViews = useMemo(
+    () => {
+      const sectionNames = new Map(
+        sections.map((section) => [section.id, section.name] as const)
+      );
+
+      return collectionStickers.map((sticker) => ({
+        ...sticker,
+        sectionName:
+          sectionNames.get(sticker.sectionId) ?? 'Seção não atribuída'
+      }));
+    },
+    [collectionStickers, sections]
+  );
+
+  const loadQuantitySection = async (sectionId: string) => {
+    setQuantitySectionId(sectionId);
+    setQuantityStatus('loading');
+    setCollectionStickers([]);
     setErrorMessage('');
 
     try {
-      const statuses = await Promise.all(
-        stickers.map((sticker) =>
-          searchCollectionSticker({
-            token,
-            albumId,
-            code: sticker.code
-          })
-        )
-      );
+      const stickerPage = await listCollectionStickers({
+        token,
+        albumId,
+        sectionId: getSectionIdQuery(sectionId),
+        limit: COLLECTION_STICKER_PAGE_LIMIT,
+        offset: 0
+      });
 
-      setQuantities(createQuantityMap(statuses));
-      await refreshSummary(summarySectionId);
+      setCollectionStickers(stickerPage.items);
+      setQuantityStatus('ready');
       setStatus('ready');
     } catch (error) {
       if (error instanceof ApiError && error.status === 401) {
@@ -202,25 +187,9 @@ export function CollectionDashboard({
 
       setErrorMessage(getCollectionErrorMessage(error));
       setStatus('error');
+      setQuantityStatus('idle');
     }
-  }, [
-    albumId,
-    onUnauthorized,
-    refreshSummary,
-    sections,
-    stickers,
-    summarySectionId,
-    token
-  ]);
-
-  useEffect(() => {
-    void Promise.resolve().then(loadCollection);
-  }, [loadCollection]);
-
-  const stickerViews = useMemo(
-    () => createStickerViews({ sections, stickers, quantities }),
-    [quantities, sections, stickers]
-  );
+  };
 
   const handleSearch = async (code: string) => {
     setSearchStatus('searching');
@@ -254,7 +223,18 @@ export function CollectionDashboard({
 
   const handleChangeSummarySection = (sectionId: string) => {
     setSummarySectionId(sectionId);
-    void refreshSummary(sectionId);
+    setMissing([]);
+    setDuplicates([]);
+    void refreshSummary(sectionId).catch((error: unknown) => {
+      if (error instanceof ApiError && error.status === 401) {
+        onUnauthorized();
+        return;
+      }
+
+      setErrorMessage(getCollectionErrorMessage(error));
+      setStatus('error');
+      setSummaryStatus('idle');
+    });
   };
 
   const handleSetQuantity = async (
@@ -274,12 +254,19 @@ export function CollectionDashboard({
         stickerId,
         quantityTotal: normalizedQuantity
       });
-      setQuantities((currentQuantities) => {
-        const nextQuantities = new Map(currentQuantities);
-        nextQuantities.set(stickerId, item.quantityTotal);
-
-        return nextQuantities;
-      });
+      setCollectionStickers((currentStickers) =>
+        currentStickers.map((sticker) =>
+          sticker.id === stickerId
+            ? {
+                ...sticker,
+                quantityTotal: item.quantityTotal,
+                owned: item.owned,
+                duplicateCount: item.duplicateCount,
+                status: getStickerStatus(item.quantityTotal)
+              }
+            : sticker
+        )
+      );
       setSearchResult((currentResult) => {
         if (currentResult?.sticker?.id !== stickerId) {
           return currentResult;
@@ -293,7 +280,16 @@ export function CollectionDashboard({
           duplicateCount: getDuplicateCount(item.quantityTotal)
         };
       });
-      await refreshSummary(summarySectionId);
+      if (summarySectionId) {
+        await refreshSummary(summarySectionId);
+      } else {
+        setProgressOverride(
+          await getAlbumProgress({
+            token,
+            albumId
+          })
+        );
+      }
     } catch (error) {
       if (error instanceof ApiError && error.status === 401) {
         onUnauthorized();
@@ -307,28 +303,8 @@ export function CollectionDashboard({
     }
   };
 
-  if (stickers.length === 0) {
-    return (
-      <section className="rounded-xl border border-line bg-white px-5 py-6">
-        <h2 className="text-lg font-semibold">Coleção</h2>
-        <p className="mt-2 text-sm text-slate-600">
-          Crie figurinhas antes de registrar quantidades.
-        </p>
-      </section>
-    );
-  }
-
   return (
     <div className="flex flex-col gap-6">
-      {status === 'loading' ? (
-        <div
-          className="rounded-xl border border-line bg-white px-5 py-6 text-sm text-slate-700"
-          role="status"
-        >
-          Carregando dados da coleção...
-        </div>
-      ) : null}
-
       {status === 'error' ? (
         <div
           className="rounded-xl border border-danger bg-danger px-5 py-4 text-sm text-white"
@@ -339,7 +315,7 @@ export function CollectionDashboard({
           <button
             type="button"
             className="mt-4 min-h-11 rounded-lg bg-white px-4 py-2 text-sm font-semibold text-danger transition hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-danger"
-            onClick={() => void loadCollection()}
+            onClick={() => setStatus('ready')}
           >
             Tentar novamente
           </button>
@@ -357,9 +333,10 @@ export function CollectionDashboard({
           <StickerQuantityList
             sections={sections}
             selectedSectionId={quantitySectionId}
+            status={quantityStatus}
             stickers={stickerViews}
             updatingStickerId={updatingStickerId}
-            onChangeSection={setQuantitySectionId}
+            onChangeSection={(sectionId) => void loadQuantitySection(sectionId)}
             onSetQuantity={(stickerId, quantityTotal) =>
               void handleSetQuantity(stickerId, quantityTotal)
             }
@@ -369,6 +346,7 @@ export function CollectionDashboard({
             missing={missing}
             sections={sections}
             selectedSectionId={summarySectionId}
+            status={summaryStatus}
             onChangeSection={handleChangeSummarySection}
           />
         </>

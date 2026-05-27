@@ -9,6 +9,7 @@ import { useSession } from '@web/features/auth/hooks/session-context';
 import { CollectionDashboard } from '@web/features/collection/components/collection-dashboard';
 import type {
   AlbumDetail,
+  AlbumProgress,
   AlbumSectionSummary,
   AlbumStatus,
   AlbumSummary,
@@ -20,6 +21,7 @@ import {
   ApiError,
   createAlbumSection,
   createSticker,
+  getAlbumProgress,
   getAlbumDetail,
   listStickers,
   updateAlbumStatus
@@ -102,6 +104,7 @@ export function AlbumDetailPage({ albumId }: AlbumDetailPageProps) {
   const accessToken = session?.accessToken;
   const isAdmin = session?.user.role === 'admin';
   const [album, setAlbum] = useState<AlbumDetail | null>(null);
+  const [progress, setProgress] = useState<AlbumProgress | null>(null);
   const [stickers, setStickers] = useState<readonly StickerSummary[]>([]);
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>(
     'loading'
@@ -127,18 +130,25 @@ export function AlbumDetailPage({ albumId }: AlbumDetailPageProps) {
     setErrorMessage('');
 
     try {
-      const [albumDetail, loadedStickers] = await Promise.all([
+      const [albumDetail, loadedStickers, albumProgress] = await Promise.all([
         getAlbumDetail({
           token: accessToken,
           albumId
         }),
-        listAllStickers({
+        isAdmin
+          ? listAllStickers({
+              token: accessToken,
+              albumId
+            })
+          : Promise.resolve([]),
+        getAlbumProgress({
           token: accessToken,
           albumId
         })
       ]);
 
       setAlbum(albumDetail);
+      setProgress(albumProgress);
       setStickers(loadedStickers);
       setStatus('ready');
     } catch (error) {
@@ -150,7 +160,7 @@ export function AlbumDetailPage({ albumId }: AlbumDetailPageProps) {
       setErrorMessage(getAlbumErrorMessage(error));
       setStatus('error');
     }
-  }, [accessToken, albumId, clearSession]);
+  }, [accessToken, albumId, clearSession, isAdmin]);
 
   useEffect(() => {
     void Promise.resolve().then(loadAlbum);
@@ -378,7 +388,7 @@ export function AlbumDetailPage({ albumId }: AlbumDetailPageProps) {
             </div>
           ) : null}
 
-          {status === 'ready' && album ? (
+          {status === 'ready' && album && progress ? (
             <>
               {isAdmin ? (
                 <div className="grid gap-6 lg:grid-cols-2">
@@ -397,17 +407,17 @@ export function AlbumDetailPage({ albumId }: AlbumDetailPageProps) {
                 </div>
               ) : null}
 
-              {!isAdmin ? (
-                <CollectionDashboard
-                  albumId={albumId}
-                  sections={album.sections}
-                  stickers={stickers}
-                  token={accessToken ?? ''}
-                  onUnauthorized={clearSession}
-                />
-              ) : null}
+              <CollectionDashboard
+                albumId={albumId}
+                initialProgress={progress}
+                sections={album.sections}
+                token={accessToken ?? ''}
+                onUnauthorized={clearSession}
+              />
 
-              <CatalogSummary sections={album.sections} stickers={stickers} />
+              {isAdmin ? (
+                <CatalogSummary sections={album.sections} stickers={stickers} />
+              ) : null}
             </>
           ) : null}
         </section>

@@ -11,6 +11,7 @@ interface CollectionSummaryListsProps {
   readonly missing: readonly MissingStickerSummary[];
   readonly sections: readonly AlbumSectionSummary[];
   readonly selectedSectionId: string;
+  readonly status?: 'idle' | 'loading' | 'ready';
   readonly onChangeSection: (sectionId: string) => void;
 }
 
@@ -18,13 +19,26 @@ const getStickerLine = (
   sticker: MissingStickerSummary | DuplicateStickerSummary
 ) => `${sticker.code} · ${sticker.title ?? 'Figurinha sem título'}`;
 
+const getSortedSections = (
+  sections: readonly AlbumSectionSummary[]
+): readonly AlbumSectionSummary[] =>
+  [...sections].sort(
+    (left, right) =>
+      left.sortOrder - right.sortOrder || left.name.localeCompare(right.name)
+  );
+
 export function CollectionSummaryLists({
   duplicates,
   missing,
   sections,
   selectedSectionId,
+  status = 'ready',
   onChangeSection
 }: CollectionSummaryListsProps) {
+  const sortedSections = getSortedSections(sections);
+  const isSelectionPending = !selectedSectionId;
+  const isLoading = status === 'loading';
+
   return (
     <section className="rounded-xl border border-line bg-white">
       <div className="flex flex-col gap-3 border-b border-line px-5 py-4 sm:flex-row sm:items-end sm:justify-between">
@@ -41,12 +55,13 @@ export function CollectionSummaryLists({
             value={selectedSectionId}
             onChange={(event) => onChangeSection(event.target.value)}
           >
-            <option value="all">Todas as seções</option>
-            {sections.map((section) => (
+            <option value="">Selecione uma seção</option>
+            {sortedSections.map((section) => (
               <option key={section.id} value={section.id}>
                 {section.name}
               </option>
             ))}
+            <option value="all">Todas as seções</option>
           </select>
         </label>
       </div>
@@ -54,7 +69,15 @@ export function CollectionSummaryLists({
       <div className="grid gap-0 md:grid-cols-2 md:divide-x md:divide-line">
         <div className="px-5 py-4">
           <h3 className="text-base font-semibold">Faltantes</h3>
-          {missing.length === 0 ? (
+          {isLoading ? (
+            <p className="mt-3 text-sm text-slate-600" role="status">
+              Carregando faltantes...
+            </p>
+          ) : isSelectionPending ? (
+            <p className="mt-3 text-sm text-slate-600">
+              Selecione uma seção para carregar faltantes.
+            </p>
+          ) : missing.length === 0 ? (
             <p className="mt-3 text-sm text-slate-600">
               Nenhuma figurinha faltando neste filtro.
             </p>
@@ -76,7 +99,15 @@ export function CollectionSummaryLists({
 
         <div className="border-t border-line px-5 py-4 md:border-t-0">
           <h3 className="text-base font-semibold">Repetidas</h3>
-          {duplicates.length === 0 ? (
+          {isLoading ? (
+            <p className="mt-3 text-sm text-slate-600" role="status">
+              Carregando repetidas...
+            </p>
+          ) : isSelectionPending ? (
+            <p className="mt-3 text-sm text-slate-600">
+              Selecione uma seção para carregar repetidas.
+            </p>
+          ) : duplicates.length === 0 ? (
             <p className="mt-3 text-sm text-slate-600">
               Nenhuma figurinha repetida neste filtro.
             </p>

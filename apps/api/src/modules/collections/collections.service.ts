@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 
 import { mapSupabaseError } from '../auth/supabase-error.mapper.js';
 import { MetricsService } from '../observability/metrics.service.js';
+import { StructuredLoggerService } from '../observability/structured-logger.service.js';
 import type {
   SupabaseAlbumSectionRow,
   SupabaseCollectionItemRow,
@@ -14,6 +15,9 @@ import type {
   CollectionListInput,
   CollectionProgressInput,
   CollectionSearchStatus,
+  CollectionStickerListInput,
+  CollectionStickerPage,
+  CollectionStickerSummary,
   DuplicateStickerPage,
   DuplicateStickerSummary,
   MissingStickerPage,
@@ -29,7 +33,9 @@ export class CollectionsService {
     @Inject(CollectionsRepository)
     private readonly collectionsRepository: CollectionsRepository,
     @Inject(MetricsService)
-    private readonly metricsService: MetricsService
+    private readonly metricsService: MetricsService,
+    @Inject(StructuredLoggerService)
+    private readonly logger: StructuredLoggerService
   ) {}
 
   public async setStickerQuantity(
@@ -145,6 +151,61 @@ export class CollectionsService {
     }
   }
 
+  public async listCollectionStickers(
+    input: CollectionStickerListInput
+  ): Promise<CollectionStickerPage> {
+    const startedAt = performance.now();
+    const scope = this.getListScope(input.query.sectionId);
+
+    try {
+      await this.assertSectionBelongsToAlbum(input);
+
+      const stickers = await this.collectionsRepository.listCollectionStickers(
+        input.accessToken,
+        input.query
+      );
+      const items =
+        await this.collectionsRepository.listCollectionItemsByStickerIds({
+          accessToken: input.accessToken,
+          userId: input.userId,
+          stickerIds: stickers.map((sticker) => sticker.id)
+        });
+      const quantities = this.createQuantityMap(items);
+      const page = {
+        items: stickers.map((sticker) =>
+          this.mapCollectionSticker(sticker, quantities.get(sticker.id) ?? 0)
+        ),
+        limit: input.query.limit,
+        offset: input.query.offset
+      };
+      const durationSeconds = (performance.now() - startedAt) / 1000;
+
+      this.metricsService.observeCollectionStickerList({
+        scope,
+        outcome: 'success',
+        durationSeconds
+      });
+      this.logger.logCollectionStickerList({
+        userId: input.userId,
+        albumId: input.query.albumId,
+        sectionId: input.query.sectionId,
+        limit: input.query.limit,
+        offset: input.query.offset,
+        itemsCount: page.items.length,
+        durationMs: durationSeconds * 1000
+      });
+
+      return page;
+    } catch (error) {
+      this.metricsService.observeCollectionStickerList({
+        scope,
+        outcome: 'failure',
+        durationSeconds: (performance.now() - startedAt) / 1000
+      });
+      throw mapSupabaseError(error);
+    }
+  }
+
   public async listMissing(
     input: CollectionListInput
   ): Promise<MissingStickerPage> {
@@ -252,6 +313,37 @@ export class CollectionsService {
       quantityTotal,
       duplicateCount
     };
+  }
+
+  private mapCollectionSticker(
+    sticker: SupabaseStickerRow,
+    quantityTotal: number
+  ): CollectionStickerSummary {
+    return {
+      ...this.mapSticker(sticker),
+      quantityTotal,
+      owned: quantityTotal > 0,
+      duplicateCount: this.calculateDuplicateCount(quantityTotal),
+      status: this.getSearchStatus(quantityTotal)
+    };
+  }
+
+  private async assertSectionBelongsToAlbum(
+    input: CollectionStickerListInput
+  ): Promise<void> {
+    if (!input.query.sectionId) {
+      return;
+    }
+
+    await this.collectionsRepository.getAlbumSection({
+      accessToken: input.accessToken,
+      albumId: input.query.albumId,
+      sectionId: input.query.sectionId
+    });
+  }
+
+  private getListScope(sectionId: string | undefined): 'section' | 'all' {
+    return sectionId ? 'section' : 'all';
   }
 
   private createQuantityMap(

@@ -67,6 +67,15 @@ export class CollectionsRepository {
       .listAlbumStickersForCollection(query);
   }
 
+  public listCollectionStickers(
+    accessToken: string,
+    query: CollectionPageQuery
+  ): Promise<readonly SupabaseStickerRow[]> {
+    return this.supabaseService
+      .createUserClient(accessToken)
+      .listCollectionStickers(query);
+  }
+
   public listAlbumCollectionItems(input: {
     readonly accessToken: string;
     readonly userId: string;
@@ -77,6 +86,16 @@ export class CollectionsRepository {
       .listAlbumCollectionItems(input);
   }
 
+  public listCollectionItemsByStickerIds(input: {
+    readonly accessToken: string;
+    readonly userId: string;
+    readonly stickerIds: readonly string[];
+  }): Promise<readonly SupabaseCollectionItemRow[]> {
+    return this.supabaseService
+      .createUserClient(input.accessToken)
+      .listCollectionItemsByStickerIds(input);
+  }
+
   public listAlbumSections(
     accessToken: string,
     albumId: string
@@ -84,5 +103,15 @@ export class CollectionsRepository {
     return this.supabaseService
       .createUserClient(accessToken)
       .listAlbumSections(albumId);
+  }
+
+  public getAlbumSection(input: {
+    readonly accessToken: string;
+    readonly albumId: string;
+    readonly sectionId: string;
+  }): Promise<SupabaseAlbumSectionRow> {
+    return this.supabaseService
+      .createUserClient(input.accessToken)
+      .getAlbumSection(input);
   }
 }

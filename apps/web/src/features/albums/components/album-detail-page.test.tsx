@@ -34,6 +34,33 @@ const userSession = {
   }
 };
 
+const progressResponse = {
+  albumId: 'album-id',
+  total: 1,
+  owned: 0,
+  missing: 1,
+  percentage: 0,
+  sections: [
+    {
+      sectionId: 'section-id',
+      sectionCode: 'BRA',
+      sectionName: 'Brazil',
+      total: 1,
+      owned: 0,
+      missing: 1,
+      percentage: 0
+    }
+  ]
+};
+
+const createJsonResponse = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: {
+      'content-type': 'application/json'
+    }
+  });
+
 describe('AlbumDetailPage', () => {
   afterEach(() => {
     localStorage.clear();
@@ -113,6 +140,9 @@ describe('AlbumDetailPage', () => {
             }
           )
         )
+        .mockResolvedValueOnce(
+          createJsonResponse(progressResponse)
+        )
     );
 
     render(
@@ -124,7 +154,7 @@ describe('AlbumDetailPage', () => {
     expect(
       await screen.findByRole('heading', { name: 'World Cup 2026' })
     ).toBeVisible();
-    expect(screen.getByRole('heading', { name: 'Brazil' })).toBeVisible();
+    expect(screen.getAllByRole('heading', { name: 'Brazil' })[0]).toBeVisible();
     expect(screen.getByText('BRA01')).toBeVisible();
     expect(screen.getByText('Time')).toBeVisible();
     expect(screen.getByText('Status: Publicado')).toBeVisible();
@@ -178,6 +208,14 @@ describe('AlbumDetailPage', () => {
             }
           }
         )
+      )
+      .mockResolvedValueOnce(
+        createJsonResponse({
+          ...progressResponse,
+          total: 0,
+          missing: 0,
+          sections: []
+        })
       )
       .mockResolvedValueOnce(
         new Response(
@@ -244,7 +282,7 @@ describe('AlbumDetailPage', () => {
       await screen.findByRole('heading', { name: 'Brazil' })
     ).toBeVisible();
 
-    fireEvent.change(screen.getByLabelText('Código da figurinha'), {
+    fireEvent.change(screen.getAllByLabelText('Código da figurinha')[0], {
       target: { value: 'bra01' }
     });
     fireEvent.change(screen.getByLabelText('Número'), {
@@ -279,7 +317,7 @@ describe('AlbumDetailPage', () => {
               name: 'World Cup 2026',
               edition: 'Panini',
               description: 'Main tournament album',
-            status: 'published',
+              status: 'published',
               createdBy: 'user-id',
               createdAt: '2026-01-01T00:00:00.000Z',
               updatedAt: '2026-01-01T00:00:00.000Z',
@@ -305,20 +343,13 @@ describe('AlbumDetailPage', () => {
           )
         )
         .mockResolvedValueOnce(
-          new Response(
-            JSON.stringify({
-              items: [],
-              limit: 100,
-              offset: 0
-            }),
-            {
-              status: 200,
-              headers: {
-                'content-type': 'application/json'
-              }
-            }
-          )
+          createJsonResponse({
+            items: [],
+            limit: 100,
+            offset: 0
+          })
         )
+        .mockResolvedValueOnce(createJsonResponse(progressResponse))
         .mockResolvedValueOnce(
           new Response(JSON.stringify({ message: 'Resource already exists' }), {
             status: 409,
@@ -339,7 +370,7 @@ describe('AlbumDetailPage', () => {
       await screen.findByRole('heading', { name: 'World Cup 2026' })
     ).toBeVisible();
 
-    fireEvent.change(screen.getByLabelText('Código da figurinha'), {
+    fireEvent.change(screen.getAllByLabelText('Código da figurinha')[0], {
       target: { value: 'bra01' }
     });
     fireEvent.click(screen.getByRole('button', { name: 'Criar figurinha' }));
@@ -353,55 +384,39 @@ describe('AlbumDetailPage', () => {
 
   it('hides catalog forms and shows collection controls for regular users', async () => {
     localStorage.setItem('albumcheio.session', JSON.stringify(userSession));
-    vi.stubGlobal(
-      'fetch',
-      vi
-        .fn()
-        .mockResolvedValueOnce(
-          new Response(JSON.stringify(userSession.user), {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify(userSession.user), {
+          status: 200,
+          headers: {
+            'content-type': 'application/json'
+          }
+        })
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            id: 'album-id',
+            name: 'World Cup 2026',
+            edition: 'Panini',
+            description: 'Main tournament album',
+            status: 'published',
+            createdBy: 'user-id',
+            createdAt: '2026-01-01T00:00:00.000Z',
+            updatedAt: '2026-01-01T00:00:00.000Z',
+            sections: []
+          }),
+          {
             status: 200,
             headers: {
               'content-type': 'application/json'
             }
-          })
+          }
         )
-        .mockResolvedValueOnce(
-          new Response(
-            JSON.stringify({
-              id: 'album-id',
-              name: 'World Cup 2026',
-              edition: 'Panini',
-              description: 'Main tournament album',
-              status: 'published',
-              createdBy: 'user-id',
-              createdAt: '2026-01-01T00:00:00.000Z',
-              updatedAt: '2026-01-01T00:00:00.000Z',
-              sections: []
-            }),
-            {
-              status: 200,
-              headers: {
-                'content-type': 'application/json'
-              }
-            }
-          )
-        )
-        .mockResolvedValueOnce(
-          new Response(
-            JSON.stringify({
-              items: [],
-              limit: 100,
-              offset: 0
-            }),
-            {
-              status: 200,
-              headers: {
-                'content-type': 'application/json'
-              }
-            }
-          )
-        )
-    );
+      )
+      .mockResolvedValueOnce(createJsonResponse(progressResponse));
+    vi.stubGlobal('fetch', fetchMock);
 
     render(
       <SessionProvider>
@@ -416,7 +431,15 @@ describe('AlbumDetailPage', () => {
     expect(
       screen.queryByRole('button', { name: 'Publicar' })
     ).not.toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Coleção' })).toBeVisible();
+    expect(
+      screen.getByRole('heading', { name: 'Progresso da coleção' })
+    ).toBeVisible();
+    expect(screen.queryByText('Resumo do catálogo')).not.toBeInTheDocument();
+    expect(
+      fetchMock.mock.calls.some(([url]) =>
+        String(url).includes('/albums/album-id/stickers')
+      )
+    ).toBe(false);
   });
 
   it('publishes draft albums from the admin controls', async () => {
@@ -467,6 +490,7 @@ describe('AlbumDetailPage', () => {
           }
         )
       )
+      .mockResolvedValueOnce(createJsonResponse(progressResponse))
       .mockResolvedValueOnce(
         new Response(
           JSON.stringify({
