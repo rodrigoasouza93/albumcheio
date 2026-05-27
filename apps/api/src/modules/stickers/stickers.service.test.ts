@@ -106,11 +106,12 @@ describe('StickersService', () => {
   });
 
   it('updates stickers through repository', async () => {
+    const updateSticker = vi.fn().mockResolvedValue({
+      ...stickerRow,
+      code: 'ARG01'
+    });
     const repository = {
-      updateSticker: vi.fn().mockResolvedValue({
-        ...stickerRow,
-        code: 'ARG01'
-      })
+      updateSticker
     } as unknown as StickersRepository;
     const service = new StickersService(repository);
 
@@ -121,7 +122,7 @@ describe('StickersService', () => {
       code: 'ARG01'
     });
 
-    expect(repository.updateSticker).toHaveBeenCalledWith({
+    expect(updateSticker).toHaveBeenCalledWith({
       accessToken: 'access-token',
       albumId: 'album-id',
       stickerId: 'sticker-id',

@@ -103,11 +103,12 @@ describe('AlbumsService', () => {
   });
 
   it('updates album status through repository', async () => {
+    const updateAlbumStatus = vi.fn().mockResolvedValue({
+      ...albumRow,
+      status: 'published'
+    });
     const repository = {
-      updateAlbumStatus: vi.fn().mockResolvedValue({
-        ...albumRow,
-        status: 'published'
-      })
+      updateAlbumStatus
     } as unknown as AlbumsRepository;
     const service = new AlbumsService(repository);
 
@@ -117,7 +118,7 @@ describe('AlbumsService', () => {
       status: 'published'
     });
 
-    expect(repository.updateAlbumStatus).toHaveBeenCalledWith({
+    expect(updateAlbumStatus).toHaveBeenCalledWith({
       accessToken: 'access-token',
       albumId: 'album-id',
       status: 'published'
@@ -126,11 +127,12 @@ describe('AlbumsService', () => {
   });
 
   it('archives albums instead of physically deleting them', async () => {
+    const updateAlbumStatus = vi.fn().mockResolvedValue({
+      ...albumRow,
+      status: 'archived'
+    });
     const repository = {
-      updateAlbumStatus: vi.fn().mockResolvedValue({
-        ...albumRow,
-        status: 'archived'
-      })
+      updateAlbumStatus
     } as unknown as AlbumsRepository;
     const service = new AlbumsService(repository);
 
@@ -139,7 +141,7 @@ describe('AlbumsService', () => {
       albumId: 'album-id'
     });
 
-    expect(repository.updateAlbumStatus).toHaveBeenCalledWith({
+    expect(updateAlbumStatus).toHaveBeenCalledWith({
       accessToken: 'access-token',
       albumId: 'album-id',
       status: 'archived'
