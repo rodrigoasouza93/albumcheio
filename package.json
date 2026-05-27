@@ -13,6 +13,8 @@
     "lint": "eslint . --max-warnings=0",
     "format": "prettier . --check",
     "format:write": "prettier . --write",
+    "seed:copa2026": "supabase db query --local --file supabase/seeds/copa-2026.sql",
+    "seed:copa2026:teams": "supabase db query --local --file supabase/seeds/copa-2026-team-stickers-only.sql",
     "test": "pnpm --filter @albumcheio/shared test && pnpm --filter @albumcheio/api test && pnpm --filter @albumcheio/web test",
     "test:e2e": "playwright test",
     "smoke": "pnpm run build && pnpm run lint && pnpm run test"

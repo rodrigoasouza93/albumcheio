@@ -2,6 +2,7 @@
 
 The schema for the album catalog and private collections lives in `supabase/migrations`.
 The local seed in `supabase/seed.sql` creates one published sample album with sections and stickers.
+Additional catalog seeds live in `supabase/seeds`.
 
 ## Apply migrations locally
 
@@ -11,6 +12,31 @@ supabase db reset
 ```
 
 `supabase db reset` recreates the local database, applies every migration, and runs `supabase/seed.sql`.
+
+## Seed the 2026 World Cup album
+
+After the local Supabase database is running and migrated, run:
+
+```bash
+pnpm run seed:copa2026
+```
+
+This applies `supabase/seeds/copa-2026.sql`, which creates or updates the published `Figurinhas da Copa 2026` catalog with:
+
+- 48 team sections from groups A-L.
+- 20 stickers per team.
+- 20 FIFA World Cup History stickers (`FWC00` through `FWC19`).
+- 14 Coca-Cola stickers (`CC1` through `CC14`).
+
+The seed is idempotent and can be run more than once.
+
+If the album sections already exist and only the team stickers need to be backfilled, run:
+
+```bash
+pnpm run seed:copa2026:teams
+```
+
+This applies `supabase/seeds/copa-2026-team-stickers-only.sql`.
 
 ## Create a new migration
 
