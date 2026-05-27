@@ -9,7 +9,7 @@ import type {
   SupabaseStickerRow
 } from './supabase.types.js';
 
-type HttpMethod = 'GET' | 'POST';
+type HttpMethod = 'DELETE' | 'GET' | 'PATCH' | 'POST';
 
 interface SupabaseRequestOptions {
   readonly method: HttpMethod;
@@ -176,6 +176,35 @@ export class SupabaseClient {
     return this.requireSingleRow(albums, 'Album not found');
   }
 
+  public async updateAlbum(input: {
+    readonly albumId: string;
+    readonly name?: string;
+    readonly edition?: string | null;
+    readonly description?: string | null;
+    readonly status?: string;
+  }): Promise<SupabaseAlbumRow> {
+    const body = {
+      ...(input.name !== undefined ? { name: input.name } : {}),
+      ...(input.edition !== undefined ? { edition: input.edition } : {}),
+      ...(input.description !== undefined
+        ? { description: input.description }
+        : {}),
+      ...(input.status !== undefined ? { status: input.status } : {})
+    };
+    const query = new URLSearchParams({
+      id: `eq.${input.albumId}`,
+      select: ALBUM_SELECT
+    });
+    const albums = await this.request<readonly SupabaseAlbumRow[]>({
+      method: 'PATCH',
+      path: `/rest/v1/albums?${query.toString()}`,
+      body,
+      prefer: 'return=representation'
+    });
+
+    return this.requireSingleRow(albums, 'Album not found');
+  }
+
   public async insertAlbumSection(input: {
     readonly albumId: string;
     readonly name: string;
@@ -210,6 +239,49 @@ export class SupabaseClient {
 
     return this.request<readonly SupabaseAlbumSectionRow[]>({
       method: 'GET',
+      path: `/rest/v1/album_sections?${query.toString()}`
+    });
+  }
+
+  public async updateAlbumSection(input: {
+    readonly albumId: string;
+    readonly sectionId: string;
+    readonly name?: string;
+    readonly code?: string;
+    readonly kind?: string;
+    readonly sortOrder?: number;
+  }): Promise<SupabaseAlbumSectionRow> {
+    const query = new URLSearchParams({
+      id: `eq.${input.sectionId}`,
+      album_id: `eq.${input.albumId}`,
+      select: SECTION_SELECT
+    });
+    const sections = await this.request<readonly SupabaseAlbumSectionRow[]>({
+      method: 'PATCH',
+      path: `/rest/v1/album_sections?${query.toString()}`,
+      body: {
+        ...(input.name !== undefined ? { name: input.name } : {}),
+        ...(input.code !== undefined ? { code: input.code } : {}),
+        ...(input.kind !== undefined ? { kind: input.kind } : {}),
+        ...(input.sortOrder !== undefined ? { sort_order: input.sortOrder } : {})
+      },
+      prefer: 'return=representation'
+    });
+
+    return this.requireSingleRow(sections, 'Album section not found');
+  }
+
+  public async deleteAlbumSection(input: {
+    readonly albumId: string;
+    readonly sectionId: string;
+  }): Promise<void> {
+    const query = new URLSearchParams({
+      id: `eq.${input.sectionId}`,
+      album_id: `eq.${input.albumId}`
+    });
+
+    await this.request<void>({
+      method: 'DELETE',
       path: `/rest/v1/album_sections?${query.toString()}`
     });
   }
@@ -279,6 +351,51 @@ export class SupabaseClient {
     });
 
     return this.requireSingleRow(stickers, 'Sticker not found');
+  }
+
+  public async updateSticker(input: {
+    readonly albumId: string;
+    readonly stickerId: string;
+    readonly sectionId?: string;
+    readonly code?: string;
+    readonly number?: number | null;
+    readonly title?: string | null;
+    readonly sortOrder?: number;
+  }): Promise<SupabaseStickerRow> {
+    const query = new URLSearchParams({
+      id: `eq.${input.stickerId}`,
+      album_id: `eq.${input.albumId}`,
+      select: STICKER_SELECT
+    });
+    const stickers = await this.request<readonly SupabaseStickerRow[]>({
+      method: 'PATCH',
+      path: `/rest/v1/stickers?${query.toString()}`,
+      body: {
+        ...(input.sectionId !== undefined ? { section_id: input.sectionId } : {}),
+        ...(input.code !== undefined ? { code: input.code } : {}),
+        ...(input.number !== undefined ? { number: input.number } : {}),
+        ...(input.title !== undefined ? { title: input.title } : {}),
+        ...(input.sortOrder !== undefined ? { sort_order: input.sortOrder } : {})
+      },
+      prefer: 'return=representation'
+    });
+
+    return this.requireSingleRow(stickers, 'Sticker not found');
+  }
+
+  public async deleteSticker(input: {
+    readonly albumId: string;
+    readonly stickerId: string;
+  }): Promise<void> {
+    const query = new URLSearchParams({
+      id: `eq.${input.stickerId}`,
+      album_id: `eq.${input.albumId}`
+    });
+
+    await this.request<void>({
+      method: 'DELETE',
+      path: `/rest/v1/stickers?${query.toString()}`
+    });
   }
 
   public async findStickerByCode(input: {

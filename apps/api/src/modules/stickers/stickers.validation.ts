@@ -8,7 +8,11 @@ import {
   parsePageQuery,
   parseRequiredUuid
 } from '../albums/albums.validation.js';
-import type { CreateStickerInput, StickerFilter } from './stickers.types.js';
+import type {
+  CreateStickerInput,
+  StickerFilter,
+  UpdateStickerInput
+} from './stickers.types.js';
 
 const assertRecord = (body: unknown): Record<string, unknown> => {
   if (!body || typeof body !== 'object' || Array.isArray(body)) {
@@ -60,6 +64,11 @@ const getQueryStringField = (
     ? value.trim()
     : undefined;
 };
+
+const hasField = (
+  body: Record<string, unknown>,
+  fieldName: string
+): boolean => Object.prototype.hasOwnProperty.call(body, fieldName);
 
 const throwValidationError = (errors: readonly string[]): never => {
   throw new UnprocessableEntityException({
@@ -113,6 +122,73 @@ export const parseCreateStickerInput = (
     title,
     sortOrder
   };
+};
+
+export const parseUpdateStickerInput = (
+  body: unknown,
+  albumId: string,
+  stickerId: string,
+  accessToken: string
+): UpdateStickerInput => {
+  const record = assertRecord(body);
+  const hasSectionId = hasField(record, 'sectionId');
+  const hasCode = hasField(record, 'code');
+  const hasTitle = hasField(record, 'title');
+  const sectionId = getOptionalStringField(record, 'sectionId');
+  const rawCode = getOptionalStringField(record, 'code');
+  const code = rawCode === null ? null : normalizeCatalogCode(rawCode);
+  const rawNumber = record.number;
+  const number =
+    rawNumber === undefined
+      ? undefined
+      : rawNumber === null
+        ? null
+        : typeof rawNumber === 'number'
+          ? rawNumber
+          : Number.NaN;
+  const title = getOptionalStringField(record, 'title');
+  const hasSortOrder = record.sortOrder !== undefined && record.sortOrder !== null;
+  const sortOrder = getNumberField(record, 'sortOrder', 0);
+  const errors = [
+    ...(hasSectionId && sectionId === null
+      ? ['sectionId must not be null']
+      : []),
+    ...(sectionId === '' ? ['sectionId must not be blank'] : []),
+    ...(sectionId && !isUuid(sectionId)
+      ? ['sectionId must be a valid UUID']
+      : []),
+    ...(hasCode && code === null ? ['code must not be null'] : []),
+    ...(code === '' ? ['code must not be blank'] : []),
+    ...(number === undefined ||
+    number === null ||
+    (Number.isInteger(number) && number > 0)
+      ? []
+      : ['number must be a positive integer']),
+    ...(title === '' ? ['title must not be blank'] : []),
+    ...(hasSortOrder && !(Number.isInteger(sortOrder) && sortOrder >= 0)
+      ? ['sortOrder must be a non-negative integer']
+      : [])
+  ];
+  const input = {
+    accessToken,
+    albumId,
+    stickerId,
+    ...(hasSectionId ? { sectionId: sectionId ?? '' } : {}),
+    ...(hasCode ? { code: code ?? '' } : {}),
+    ...(number !== undefined ? { number } : {}),
+    ...(hasTitle ? { title } : {}),
+    ...(hasSortOrder ? { sortOrder } : {})
+  };
+
+  if (Object.keys(input).length === 3) {
+    errors.push('at least one sticker field must be provided');
+  }
+
+  if (errors.length > 0) {
+    throwValidationError(errors);
+  }
+
+  return input;
 };
 
 export const parseStickerFilter = (

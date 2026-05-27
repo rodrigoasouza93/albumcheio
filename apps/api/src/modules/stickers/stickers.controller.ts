@@ -1,9 +1,11 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Inject,
   Param,
+  Patch,
   Post,
   Query,
   Req,
@@ -18,7 +20,8 @@ import { StickersService } from './stickers.service.js';
 import type { StickerPage, StickerSummary } from './stickers.types.js';
 import {
   parseCreateStickerInput,
-  parseStickerFilter
+  parseStickerFilter,
+  parseUpdateStickerInput
 } from './stickers.validation.js';
 
 interface AuthenticatedRequest {
@@ -61,5 +64,37 @@ export class StickersController {
         request.user.accessToken
       )
     );
+  }
+
+  @Patch(':stickerId')
+  @UseGuards(AdminGuard)
+  public updateSticker(
+    @Req() request: AuthenticatedRequest,
+    @Param('albumId') albumId: string | undefined,
+    @Param('stickerId') stickerId: string | undefined,
+    @Body() body: unknown
+  ): Promise<StickerSummary> {
+    return this.stickersService.updateSticker(
+      parseUpdateStickerInput(
+        body,
+        parseRequiredUuid(albumId, 'albumId'),
+        parseRequiredUuid(stickerId, 'stickerId'),
+        request.user.accessToken
+      )
+    );
+  }
+
+  @Delete(':stickerId')
+  @UseGuards(AdminGuard)
+  public deleteSticker(
+    @Req() request: AuthenticatedRequest,
+    @Param('albumId') albumId: string | undefined,
+    @Param('stickerId') stickerId: string | undefined
+  ): Promise<void> {
+    return this.stickersService.deleteSticker({
+      accessToken: request.user.accessToken,
+      albumId: parseRequiredUuid(albumId, 'albumId'),
+      stickerId: parseRequiredUuid(stickerId, 'stickerId')
+    });
   }
 }

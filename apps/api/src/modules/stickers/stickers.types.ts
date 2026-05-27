@@ -10,6 +10,17 @@ export interface CreateStickerInput {
   readonly sortOrder: number;
 }
 
+export interface UpdateStickerInput {
+  readonly accessToken: string;
+  readonly albumId: string;
+  readonly stickerId: string;
+  readonly sectionId?: string;
+  readonly code?: string;
+  readonly number?: number | null;
+  readonly title?: string | null;
+  readonly sortOrder?: number;
+}
+
 export interface StickerFilter extends PageQuery {
   readonly albumId: string;
   readonly sectionId?: string;

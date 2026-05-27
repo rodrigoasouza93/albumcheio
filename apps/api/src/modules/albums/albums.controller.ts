@@ -1,9 +1,11 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Inject,
   Param,
+  Patch,
   Post,
   Query,
   Req,
@@ -24,7 +26,10 @@ import {
   parseCreateAlbumInput,
   parseCreateAlbumSectionInput,
   parsePageQuery,
-  parseRequiredUuid
+  parseRequiredUuid,
+  parseUpdateAlbumInput,
+  parseUpdateAlbumSectionInput,
+  parseUpdateAlbumStatusInput
 } from './albums.validation.js';
 
 interface AuthenticatedRequest {
@@ -75,6 +80,50 @@ export class AlbumsController {
     });
   }
 
+  @Patch(':albumId')
+  @UseGuards(AdminGuard)
+  public updateAlbum(
+    @Req() request: AuthenticatedRequest,
+    @Param('albumId') albumId: string | undefined,
+    @Body() body: unknown
+  ): Promise<AlbumSummary> {
+    return this.albumsService.updateAlbum(
+      parseUpdateAlbumInput(
+        body,
+        parseRequiredUuid(albumId, 'albumId'),
+        request.user.accessToken
+      )
+    );
+  }
+
+  @Delete(':albumId')
+  @UseGuards(AdminGuard)
+  public archiveAlbum(
+    @Req() request: AuthenticatedRequest,
+    @Param('albumId') albumId: string | undefined
+  ): Promise<AlbumSummary> {
+    return this.albumsService.archiveAlbum({
+      accessToken: request.user.accessToken,
+      albumId: parseRequiredUuid(albumId, 'albumId')
+    });
+  }
+
+  @Patch(':albumId/status')
+  @UseGuards(AdminGuard)
+  public updateAlbumStatus(
+    @Req() request: AuthenticatedRequest,
+    @Param('albumId') albumId: string | undefined,
+    @Body() body: unknown
+  ): Promise<AlbumSummary> {
+    return this.albumsService.updateAlbumStatus(
+      parseUpdateAlbumStatusInput(
+        body,
+        parseRequiredUuid(albumId, 'albumId'),
+        request.user.accessToken
+      )
+    );
+  }
+
   @Post(':albumId/sections')
   @UseGuards(AdminGuard)
   public createSection(
@@ -89,5 +138,37 @@ export class AlbumsController {
         request.user.accessToken
       )
     );
+  }
+
+  @Patch(':albumId/sections/:sectionId')
+  @UseGuards(AdminGuard)
+  public updateSection(
+    @Req() request: AuthenticatedRequest,
+    @Param('albumId') albumId: string | undefined,
+    @Param('sectionId') sectionId: string | undefined,
+    @Body() body: unknown
+  ): Promise<AlbumSectionSummary> {
+    return this.albumsService.updateSection(
+      parseUpdateAlbumSectionInput(
+        body,
+        parseRequiredUuid(albumId, 'albumId'),
+        parseRequiredUuid(sectionId, 'sectionId'),
+        request.user.accessToken
+      )
+    );
+  }
+
+  @Delete(':albumId/sections/:sectionId')
+  @UseGuards(AdminGuard)
+  public deleteSection(
+    @Req() request: AuthenticatedRequest,
+    @Param('albumId') albumId: string | undefined,
+    @Param('sectionId') sectionId: string | undefined
+  ): Promise<void> {
+    return this.albumsService.deleteSection({
+      accessToken: request.user.accessToken,
+      albumId: parseRequiredUuid(albumId, 'albumId'),
+      sectionId: parseRequiredUuid(sectionId, 'sectionId')
+    });
   }
 }

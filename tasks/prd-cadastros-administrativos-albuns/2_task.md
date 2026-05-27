@@ -26,13 +26,13 @@ Completar a API de catálogo para edição, remoção e publicação/despublica�
 
 ## Subtarefas
 
-- [ ] 2.1 Adicionar validadores para update parcial, status de álbum e IDs de recursos filhos.
-- [ ] 2.2 Implementar endpoints de edição, remoção/descontinuação e status de álbuns.
-- [ ] 2.3 Implementar endpoints de edição e remoção/descontinuação de seções.
-- [ ] 2.4 Implementar endpoints de edição e remoção/descontinuação de figurinhas.
-- [ ] 2.5 Ajustar serviços e repositórios para diferenciar leituras de admin e usuário comum.
-- [ ] 2.6 Ajustar endpoints de coleção para manter continuidade após despublicação.
-- [ ] 2.7 Mapear erros de RLS/autorização para respostas HTTP consistentes.
+- [x] 2.1 Adicionar validadores para update parcial, status de álbum e IDs de recursos filhos.
+- [x] 2.2 Implementar endpoints de edição, remoção/descontinuação e status de álbuns.
+- [x] 2.3 Implementar endpoints de edição e remoção/descontinuação de seções.
+- [x] 2.4 Implementar endpoints de edição e remoção/descontinuação de figurinhas.
+- [x] 2.5 Ajustar serviços e repositórios para diferenciar leituras de admin e usuário comum.
+- [x] 2.6 Ajustar endpoints de coleção para manter continuidade após despublicação.
+- [x] 2.7 Mapear erros de RLS/autorização para respostas HTTP consistentes.
 
 ## Detalhes de implementação
 
@@ -48,11 +48,25 @@ Seguir `techspec.md`, principalmente "Endpoints da API", "Visão dos componentes
 
 ## Testes da tarefa
 
-- [ ] Testes unitários de services e validators.
-- [ ] Testes unitários de mapeamento de erros de autorização.
-- [ ] Testes de integração dos endpoints administrativos com usuário admin.
-- [ ] Testes de integração dos endpoints administrativos com usuário comum.
-- [ ] Testes de integração das regras de listagem e continuidade de coleção.
+- [x] Testes unitários de services e validators.
+- [x] Testes unitários de mapeamento de erros de autorização.
+- [x] Testes de integração dos endpoints administrativos com usuário admin.
+- [x] Testes de integração dos endpoints administrativos com usuário comum.
+- [x] Testes de integração das regras de listagem e continuidade de coleção.
+
+## Notas de implementação
+
+- Adicionados validadores de update parcial para álbuns, seções e figurinhas, incluindo normalização de códigos e validação de `status`.
+- Adicionados endpoints administrativos `PATCH /albums/:albumId`, `DELETE /albums/:albumId`, `PATCH /albums/:albumId/status`, `PATCH/DELETE /albums/:albumId/sections/:sectionId` e `PATCH/DELETE /albums/:albumId/stickers/:stickerId`.
+- `DELETE /albums/:albumId` arquiva o álbum (`status = archived`) para evitar perda de coleção por cascade.
+- Leituras de admin versus usuário comum e continuidade após despublicação permanecem aplicadas por `profiles.role`, `AdminGuard`, mapeamento Supabase e políticas RLS da task 1.
+- Endpoints de coleção foram preservados para operar sobre os dados visíveis por RLS, incluindo álbuns despublicados já vinculados à coleção do usuário.
+
+## Verificação
+
+- `pnpm --filter @albumcheio/api test`
+- `pnpm --filter @albumcheio/api build`
+- `git diff --check`
 
 ## Arquivos relevantes
 
