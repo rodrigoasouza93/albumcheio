@@ -32,7 +32,10 @@ describe('StructuredLoggerService', () => {
   });
 
   it('writes safe catalog events without request payloads', () => {
-    const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    let loggedLine: unknown;
+    const consoleSpy = vi.spyOn(console, 'log').mockImplementation((line) => {
+      loggedLine = line;
+    });
     const logger = new StructuredLoggerService();
 
     logger.logCatalogAdminMutation({
@@ -45,7 +48,8 @@ describe('StructuredLoggerService', () => {
     });
 
     expect(consoleSpy).toHaveBeenCalledTimes(1);
-    expect(JSON.parse(consoleSpy.mock.calls[0]?.[0] ?? '{}')).toMatchObject({
+    expect(typeof loggedLine).toBe('string');
+    expect(JSON.parse(loggedLine)).toMatchObject({
       level: 'info',
       event: 'catalog_admin_mutation',
       userId: 'user-id',
@@ -55,7 +59,7 @@ describe('StructuredLoggerService', () => {
       outcome: 'success',
       albumId: 'album-id'
     });
-    expect(consoleSpy.mock.calls[0]?.[0]).not.toContain('access-token');
-    expect(consoleSpy.mock.calls[0]?.[0]).not.toContain('password');
+    expect(loggedLine).not.toContain('access-token');
+    expect(loggedLine).not.toContain('password');
   });
 });

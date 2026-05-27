@@ -29,7 +29,9 @@ export class AlbumsService {
   public constructor(
     @Inject(AlbumsRepository)
     private readonly albumsRepository: AlbumsRepository,
+    @Inject(MetricsService)
     private readonly metricsService: MetricsService,
+    @Inject(StructuredLoggerService)
     private readonly logger: StructuredLoggerService
   ) {}
 

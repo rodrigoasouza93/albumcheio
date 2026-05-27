@@ -19,7 +19,9 @@ export class StickersService {
   public constructor(
     @Inject(StickersRepository)
     private readonly stickersRepository: StickersRepository,
+    @Inject(MetricsService)
     private readonly metricsService: MetricsService,
+    @Inject(StructuredLoggerService)
     private readonly logger: StructuredLoggerService
   ) {}
 

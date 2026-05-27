@@ -1,4 +1,4 @@
-import { ForbiddenException, Injectable } from '@nestjs/common';
+import { ForbiddenException, Inject, Injectable } from '@nestjs/common';
 import type { CanActivate, ExecutionContext } from '@nestjs/common';
 
 import { MetricsService } from '../observability/metrics.service.js';
@@ -12,7 +12,9 @@ interface RequestWithUser {
 @Injectable()
 export class AdminGuard implements CanActivate {
   public constructor(
+    @Inject(MetricsService)
     private readonly metricsService: MetricsService,
+    @Inject(StructuredLoggerService)
     private readonly logger: StructuredLoggerService
   ) {}
 
