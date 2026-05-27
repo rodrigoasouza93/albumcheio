@@ -11,6 +11,7 @@ import { AuthService } from './auth.service.js';
 const profile = {
   id: 'user-id',
   name: 'Rodrigo',
+  role: 'user',
   createdAt: '2026-05-25T10:00:00.000Z',
   updatedAt: '2026-05-25T10:00:00.000Z'
 };

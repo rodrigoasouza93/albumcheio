@@ -26,6 +26,7 @@ export interface SupabaseAuthPayload {
 export interface SupabaseProfileRow {
   readonly id: string;
   readonly name: string;
+  readonly role: 'user' | 'admin';
   readonly created_at: string;
   readonly updated_at: string;
 }

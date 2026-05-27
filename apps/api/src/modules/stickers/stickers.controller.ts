@@ -11,6 +11,7 @@ import {
 } from '@nestjs/common';
 
 import { parseRequiredUuid } from '../albums/albums.validation.js';
+import { AdminGuard } from '../auth/admin.guard.js';
 import { SupabaseAuthGuard } from '../auth/supabase-auth.guard.js';
 import type { AuthenticatedUser } from '../auth/auth.types.js';
 import { StickersService } from './stickers.service.js';
@@ -47,6 +48,7 @@ export class StickersController {
   }
 
   @Post()
+  @UseGuards(AdminGuard)
   public createSticker(
     @Req() request: AuthenticatedRequest,
     @Param('albumId') albumId: string | undefined,

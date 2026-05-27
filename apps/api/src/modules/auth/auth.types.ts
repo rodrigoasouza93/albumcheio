@@ -1,3 +1,5 @@
+export type ProfileRole = 'user' | 'admin';
+
 export interface RegisterUserInput {
   readonly name: string;
   readonly email: string;
@@ -13,12 +15,14 @@ export interface AuthenticatedUser {
   readonly id: string;
   readonly email: string | null;
   readonly name: string | null;
+  readonly role: ProfileRole;
   readonly accessToken: string;
 }
 
 export interface UserProfile {
   readonly id: string;
   readonly name: string;
+  readonly role: ProfileRole;
   readonly email?: string | null;
   readonly createdAt: string;
   readonly updatedAt: string;

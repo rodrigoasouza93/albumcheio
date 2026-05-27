@@ -92,11 +92,15 @@ describe('supabase catalog and collection schema', () => {
     });
   });
 
-  it('allows authenticated users to read and write the shared catalog in the MVP', () => {
+  it('protects profile roles and restricts shared catalog mutations to admins', () => {
     const catalogPolicySnippets = [
-      'create policy albums_select_authenticated on public.albums for select to authenticated using (true)',
-      'create policy album_sections_insert_authenticated on public.album_sections for insert to authenticated with check ((select auth.uid()) is not null)',
-      'create policy stickers_update_authenticated on public.stickers for update to authenticated using ((select auth.uid()) is not null) with check ((select auth.uid()) is not null)',
+      "add column if not exists role text not null default 'user'",
+      "add constraint profiles_role_valid check (role in ('user', 'admin'))",
+      'create or replace function public.is_admin()',
+      'create trigger profiles_prevent_role_self_change before update on public.profiles',
+      'create policy albums_insert_admin on public.albums for insert to authenticated with check (public.is_admin())',
+      'create policy album_sections_update_admin on public.album_sections for update to authenticated using (public.is_admin()) with check (public.is_admin())',
+      'create policy stickers_delete_admin on public.stickers for delete to authenticated using (public.is_admin())',
       'grant select, insert, update, delete on public.profiles, public.albums, public.album_sections, public.stickers, public.collection_items to authenticated'
     ];
 
