@@ -19,6 +19,8 @@ import { StickersController } from '../stickers/stickers.controller.js';
 const user = {
   id: '00000000-0000-4000-8000-000000000999',
   email: 'user@example.com',
+  name: 'Admin User',
+  role: 'admin',
   accessToken: 'access-token'
 };
 const albumId = '00000000-0000-4000-8000-000000000001';

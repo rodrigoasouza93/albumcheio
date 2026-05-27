@@ -4,7 +4,7 @@ import type { CanActivate, ExecutionContext } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service.js';
 import { MetricsService } from '../observability/metrics.service.js';
 import { mapSupabaseError } from './supabase-error.mapper.js';
-import type { AuthenticatedUser } from './auth.types.js';
+import type { AuthenticatedUser, ProfileRole } from './auth.types.js';
 
 interface RequestWithUser {
   readonly headers: Record<string, string | readonly string[] | undefined>;
@@ -30,14 +30,15 @@ export class SupabaseAuthGuard implements CanActivate {
     }
 
     try {
-      const payload = await this.supabaseService
-        .createUserClient(accessToken)
-        .getAuthenticatedUser();
+      const userClient = this.supabaseService.createUserClient(accessToken);
+      const payload = await userClient.getAuthenticatedUser();
+      const profile = await userClient.getProfile(payload.user.id);
 
       request.user = {
         id: payload.user.id,
         email: payload.user.email ?? null,
         name: payload.user.user_metadata?.name ?? null,
+        role: this.normalizeRole(profile.role),
         accessToken
       };
 
@@ -46,6 +47,10 @@ export class SupabaseAuthGuard implements CanActivate {
       this.metricsService.recordAuthFailure('invalid_bearer_token');
       throw mapSupabaseError(error);
     }
+  }
+
+  private normalizeRole(role: string): ProfileRole {
+    return role === 'admin' ? 'admin' : 'user';
   }
 
   private extractBearerToken(request: RequestWithUser): string | undefined {

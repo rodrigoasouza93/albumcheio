@@ -22,6 +22,7 @@ import { AuthController } from './auth.controller.js';
 const profileRow = {
   id: 'user-id',
   name: 'Rodrigo',
+  role: 'user',
   created_at: '2026-05-25T10:00:00.000Z',
   updated_at: '2026-05-25T10:00:00.000Z'
 };
@@ -107,6 +108,7 @@ describe('auth endpoints', () => {
       user: {
         id: 'user-id',
         name: 'Rodrigo',
+        role: 'user',
         email: 'user@example.com',
         createdAt: '2026-05-25T10:00:00.000Z',
         updatedAt: '2026-05-25T10:00:00.000Z'
@@ -136,6 +138,7 @@ describe('auth endpoints', () => {
         id: 'user-id',
         email: 'user@example.com',
         name: 'Rodrigo',
+        role: 'user',
         accessToken: 'access-token'
       }
     });
@@ -152,6 +155,7 @@ describe('auth endpoints', () => {
         id: 'user-id',
         email: 'user@example.com',
         name: 'Rodrigo',
+        role: 'user',
         accessToken: 'access-token'
       }
     });
@@ -159,6 +163,7 @@ describe('auth endpoints', () => {
     expect(response).toEqual({
       id: 'user-id',
       name: 'Rodrigo',
+      role: 'user',
       email: 'user@example.com',
       createdAt: '2026-05-25T10:00:00.000Z',
       updatedAt: '2026-05-25T10:00:00.000Z'

@@ -115,7 +115,7 @@ export class SupabaseClient {
   public async getProfile(userId: string): Promise<SupabaseProfileRow> {
     const query = new URLSearchParams({
       id: `eq.${userId}`,
-      select: 'id,name,created_at,updated_at'
+      select: 'id,name,role,created_at,updated_at'
     });
     const profiles = await this.request<readonly SupabaseProfileRow[]>({
       method: 'GET',

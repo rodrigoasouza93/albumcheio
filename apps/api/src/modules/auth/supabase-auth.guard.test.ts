@@ -45,6 +45,13 @@ describe('SupabaseAuthGuard', () => {
             name: 'Rodrigo Souza'
           }
         }
+      }),
+      getProfile: vi.fn().mockResolvedValue({
+        id: 'user-id',
+        name: 'Rodrigo Souza',
+        role: 'admin',
+        created_at: '2026-05-25T10:00:00.000Z',
+        updated_at: '2026-05-25T10:00:00.000Z'
       })
     } as unknown as SupabaseClient;
     const supabaseService = {
@@ -64,6 +71,7 @@ describe('SupabaseAuthGuard', () => {
         id: 'user-id',
         email: 'user@example.com',
         name: 'Rodrigo Souza',
+        role: 'admin',
         accessToken: 'user-token'
       }
     });

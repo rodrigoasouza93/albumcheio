@@ -66,6 +66,7 @@ export class ProfilesService {
     return {
       id: profile.id,
       name: profile.name,
+      role: profile.role,
       createdAt: profile.created_at,
       updatedAt: profile.updated_at
     };

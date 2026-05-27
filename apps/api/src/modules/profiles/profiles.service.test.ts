@@ -12,6 +12,7 @@ describe('ProfilesService', () => {
       getProfile: vi.fn().mockResolvedValue({
         id: 'user-id',
         name: 'Rodrigo',
+        role: 'admin',
         created_at: '2026-05-25T10:00:00.000Z',
         updated_at: '2026-05-25T10:00:00.000Z'
       })
@@ -28,6 +29,7 @@ describe('ProfilesService', () => {
     expect(profile).toEqual({
       id: 'user-id',
       name: 'Rodrigo',
+      role: 'admin',
       createdAt: '2026-05-25T10:00:00.000Z',
       updatedAt: '2026-05-25T10:00:00.000Z'
     });
@@ -55,6 +57,7 @@ describe('ProfilesService', () => {
     const insertProfile = vi.fn().mockResolvedValue({
       id: 'user-id',
       name: 'Rodrigo',
+      role: 'user',
       created_at: '2026-05-25T10:00:00.000Z',
       updated_at: '2026-05-25T10:00:00.000Z'
     });

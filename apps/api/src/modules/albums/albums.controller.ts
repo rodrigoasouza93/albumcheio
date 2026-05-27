@@ -11,6 +11,7 @@ import {
 } from '@nestjs/common';
 
 import { SupabaseAuthGuard } from '../auth/supabase-auth.guard.js';
+import { AdminGuard } from '../auth/admin.guard.js';
 import type { AuthenticatedUser } from '../auth/auth.types.js';
 import { AlbumsService } from './albums.service.js';
 import type {
@@ -50,6 +51,7 @@ export class AlbumsController {
   }
 
   @Post()
+  @UseGuards(AdminGuard)
   public createAlbum(
     @Req() request: AuthenticatedRequest,
     @Body() body: unknown
@@ -74,6 +76,7 @@ export class AlbumsController {
   }
 
   @Post(':albumId/sections')
+  @UseGuards(AdminGuard)
   public createSection(
     @Req() request: AuthenticatedRequest,
     @Param('albumId') albumId: string | undefined,
