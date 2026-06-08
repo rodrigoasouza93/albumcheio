@@ -26,9 +26,11 @@ export function AuthForm() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [errors, setErrors] = useState<readonly string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isRegistering = mode === 'register';
+  const passwordInputType = isPasswordVisible ? 'text' : 'password';
 
   const title = useMemo(
     () => (isRegistering ? 'Crie sua conta' : 'Entre nos seus álbuns'),
@@ -155,16 +157,27 @@ export function AuthForm() {
           />
         </label>
 
-        <label className="flex flex-col gap-2 text-sm font-medium text-ink">
-          Senha
-          <input
-            className="min-h-11 rounded-lg border border-line px-3 text-base font-normal text-ink outline-none transition focus:border-ocean focus:ring-2 focus:ring-ocean/20"
-            type="password"
-            autoComplete={isRegistering ? 'new-password' : 'current-password'}
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-          />
-        </label>
+        <div className="flex flex-col gap-2 text-sm font-medium text-ink">
+          <label htmlFor="auth-password">Senha</label>
+          <div className="relative">
+            <input
+              id="auth-password"
+              className="min-h-11 w-full rounded-lg border border-line px-3 pr-24 text-base font-normal text-ink outline-none transition focus:border-ocean focus:ring-2 focus:ring-ocean/20"
+              type={passwordInputType}
+              autoComplete={isRegistering ? 'new-password' : 'current-password'}
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+            />
+            <button
+              type="button"
+              className="absolute right-2 top-1/2 min-h-8 -translate-y-1/2 rounded-lg px-2 text-xs font-semibold text-ocean transition hover:bg-ocean/10 focus:outline-none focus:ring-2 focus:ring-ocean focus:ring-offset-2"
+              aria-pressed={isPasswordVisible}
+              onClick={() => setIsPasswordVisible((current) => !current)}
+            >
+              {isPasswordVisible ? 'Ocultar' : 'Mostrar'}
+            </button>
+          </div>
+        </div>
 
         {errors.length > 0 ? (
           <div

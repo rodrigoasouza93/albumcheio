@@ -50,6 +50,30 @@ describe('AuthForm', () => {
     expect(screen.getByText('Senha é obrigatória.')).toBeVisible();
   });
 
+  it('toggles password visibility for login and account creation', () => {
+    render(
+      <SessionProvider>
+        <AuthForm />
+      </SessionProvider>
+    );
+
+    const passwordInput = screen.getByLabelText('Senha');
+
+    expect(passwordInput).toHaveAttribute('type', 'password');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Mostrar' }));
+
+    expect(passwordInput).toHaveAttribute('type', 'text');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Criar conta' }));
+
+    expect(screen.getByLabelText('Senha')).toHaveAttribute('type', 'text');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Ocultar' }));
+
+    expect(screen.getByLabelText('Senha')).toHaveAttribute('type', 'password');
+  });
+
   it('creates an account and redirects to albums', async () => {
     vi.stubGlobal(
       'fetch',

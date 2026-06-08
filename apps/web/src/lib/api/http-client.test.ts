@@ -3,6 +3,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   listAlbums,
   listCollectionStickers,
+  listDuplicateStickers,
+  listMissingStickers,
   requestApi,
   updateAlbumStatus
 } from './http-client';
@@ -142,5 +144,46 @@ describe('http client', () => {
       'http://localhost:3001/api/v1/albums/album-id/collection/stickers?sectionId=section-id&limit=25&offset=50'
     );
     expect(headers.get('authorization')).toBe('Bearer access-token');
+  });
+
+  it('requests missing and duplicate stickers with section pagination', async () => {
+    const fetchMock = vi.fn().mockImplementation(() =>
+      new Response(
+        JSON.stringify({
+          items: [],
+          limit: 100,
+          offset: 100
+        }),
+        {
+          status: 200,
+          headers: {
+            'content-type': 'application/json'
+          }
+        }
+      )
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    await listMissingStickers({
+      token: 'access-token',
+      albumId: 'album-id',
+      sectionId: 'section-id',
+      limit: 100,
+      offset: 100
+    });
+    await listDuplicateStickers({
+      token: 'access-token',
+      albumId: 'album-id',
+      sectionId: 'section-id',
+      limit: 100,
+      offset: 100
+    });
+
+    expect(fetchMock.mock.calls[0][0]).toBe(
+      'http://localhost:3001/api/v1/albums/album-id/missing?sectionId=section-id&limit=100&offset=100'
+    );
+    expect(fetchMock.mock.calls[1][0]).toBe(
+      'http://localhost:3001/api/v1/albums/album-id/duplicates?sectionId=section-id&limit=100&offset=100'
+    );
   });
 });

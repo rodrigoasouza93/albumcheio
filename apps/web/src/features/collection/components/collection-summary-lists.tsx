@@ -6,13 +6,18 @@ import type {
   MissingStickerSummary
 } from '@web/lib/api/api-types';
 
+import { StickerShareExportPanel } from './sticker-share-export-panel';
+
 interface CollectionSummaryListsProps {
+  readonly albumId: string;
   readonly duplicates: readonly DuplicateStickerSummary[];
   readonly missing: readonly MissingStickerSummary[];
   readonly sections: readonly AlbumSectionSummary[];
   readonly selectedSectionId: string;
   readonly status?: 'idle' | 'loading' | 'ready';
+  readonly token: string;
   readonly onChangeSection: (sectionId: string) => void;
+  readonly onUnauthorized: () => void;
 }
 
 const getStickerLine = (
@@ -28,12 +33,15 @@ const getSortedSections = (
   );
 
 export function CollectionSummaryLists({
+  albumId,
   duplicates,
   missing,
   sections,
   selectedSectionId,
   status = 'ready',
-  onChangeSection
+  token,
+  onChangeSection,
+  onUnauthorized
 }: CollectionSummaryListsProps) {
   const sortedSections = getSortedSections(sections);
   const isSelectionPending = !selectedSectionId;
@@ -65,6 +73,14 @@ export function CollectionSummaryLists({
           </select>
         </label>
       </div>
+
+      <StickerShareExportPanel
+        albumId={albumId}
+        token={token}
+        sections={sections}
+        selectedSectionId={selectedSectionId}
+        onUnauthorized={onUnauthorized}
+      />
 
       <div className="grid gap-0 md:grid-cols-2 md:divide-x md:divide-line">
         <div className="px-5 py-4">
