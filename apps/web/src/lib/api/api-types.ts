@@ -176,3 +176,26 @@ export interface CollectionStickerPage {
   readonly limit: number;
   readonly offset: number;
 }
+
+export type ShareListKind = 'missing' | 'duplicates';
+
+export interface ShareListItem {
+  readonly code: string;
+  readonly title: string;
+  readonly sectionName: string;
+}
+
+export interface LoadCompleteShareListInput {
+  readonly token: string;
+  readonly albumId: string;
+  readonly sectionId: string;
+  readonly kind: ShareListKind;
+  readonly sections: readonly AlbumSectionSummary[];
+}
+
+export interface ShareListExport {
+  readonly kind: ShareListKind;
+  readonly sectionName: string;
+  readonly items: readonly ShareListItem[];
+  readonly generatedAt: string;
+}

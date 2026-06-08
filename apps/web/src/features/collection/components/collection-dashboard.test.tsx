@@ -1,4 +1,10 @@
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within
+} from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { CollectionDashboard } from './collection-dashboard';
@@ -459,5 +465,205 @@ describe('CollectionDashboard', () => {
       await screen.findByText('Nenhuma figurinha faltando neste filtro.')
     ).toBeVisible();
     expect(requestedSectionIds).toEqual([null, null, null]);
+  });
+
+  it('copies the complete missing list across every page', async () => {
+    const missingOffsets: number[] = [];
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'clipboard', {
+      value: { writeText },
+      configurable: true
+    });
+    const fetchMock = vi.fn((url: string | URL | Request) => {
+      const requestUrl = getRequestUrl(url);
+
+      if (requestUrl.pathname.endsWith('/progress')) {
+        return createJsonResponse(initialProgress);
+      }
+
+      if (requestUrl.pathname.endsWith('/missing')) {
+        const offset = Number(requestUrl.searchParams.get('offset'));
+        missingOffsets.push(offset);
+
+        return createJsonResponse({
+          items:
+            missingOffsets.length === 1
+              ? [{ ...missingSticker, quantityTotal: 0, owned: false }]
+              : offset === 0
+                ? Array.from({ length: 100 }, (_, index) => ({
+                    ...missingSticker,
+                    id: `missing-${index}`,
+                    code: `BRA${String(index).padStart(2, '0')}`,
+                    quantityTotal: 0,
+                    owned: false
+                  }))
+                : [
+                    {
+                      ...missingSticker,
+                      id: 'missing-last',
+                      code: 'BRA999',
+                      title: 'Goalkeeper',
+                      quantityTotal: 0,
+                      owned: false
+                    }
+                  ],
+          limit: 100,
+          offset
+        });
+      }
+
+      return createJsonResponse({
+        items: [{ ...sticker, quantityTotal: 3, duplicateCount: 2 }],
+        limit: 100,
+        offset: 0
+      });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(
+      <CollectionDashboard
+        albumId="album-id"
+        initialProgress={initialProgress}
+        sections={[section]}
+        token="access-token"
+        onUnauthorized={vi.fn()}
+      />
+    );
+
+    fireEvent.change(screen.getAllByLabelText('Seção')[1], {
+      target: { value: 'section-id' }
+    });
+
+    expect(await screen.findByText('BRA02 · Forward')).toBeVisible();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Copiar lista' }));
+
+    await waitFor(() => expect(writeText).toHaveBeenCalledTimes(1));
+
+    const copiedText = writeText.mock.calls[0][0] as string;
+    expect(missingOffsets).toEqual([0, 0, 100]);
+    expect(copiedText).toContain('Lista de figurinhas faltantes');
+    expect(copiedText).toContain('BRA999 - Goalkeeper - Brazil');
+    expect(copiedText).not.toContain('disponíveis');
+    expect(copiedText).not.toContain('email');
+  });
+
+  it('shows manual copy fallback when clipboard fails for duplicates', async () => {
+    Object.defineProperty(navigator, 'clipboard', {
+      value: { writeText: vi.fn().mockRejectedValue(new Error('denied')) },
+      configurable: true
+    });
+    const fetchMock = vi.fn((url: string | URL | Request) => {
+      const requestUrl = getRequestUrl(url);
+
+      if (requestUrl.pathname.endsWith('/progress')) {
+        return createJsonResponse(initialProgress);
+      }
+
+      if (requestUrl.pathname.endsWith('/missing')) {
+        return createJsonResponse({
+          items: [],
+          limit: 100,
+          offset: 0
+        });
+      }
+
+      return createJsonResponse({
+        items: [{ ...sticker, quantityTotal: 3, duplicateCount: 2 }],
+        limit: 100,
+        offset: 0
+      });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(
+      <CollectionDashboard
+        albumId="album-id"
+        initialProgress={initialProgress}
+        sections={[section]}
+        token="access-token"
+        onUnauthorized={vi.fn()}
+      />
+    );
+
+    fireEvent.change(screen.getAllByLabelText('Seção')[1], {
+      target: { value: 'section-id' }
+    });
+    fireEvent.click(screen.getByLabelText('Repetidas'));
+    fireEvent.click(screen.getByRole('button', { name: 'Copiar lista' }));
+
+    expect(
+      await screen.findByText('Copie o texto manualmente pelo campo abaixo.')
+    ).toBeVisible();
+
+    const manualText = screen.getByLabelText('Texto para cópia manual');
+    expect((manualText as HTMLTextAreaElement).value).toContain(
+      'BRA01 - Badge - Brazil'
+    );
+    expect((manualText as HTMLTextAreaElement).value).not.toContain(
+      '2 disponíveis'
+    );
+  });
+
+  it('opens a printable view using the complete duplicate list', async () => {
+    const write = vi.fn();
+    const print = vi.fn();
+    const openMock = vi.fn().mockReturnValue({
+      document: {
+        open: vi.fn(),
+        write,
+        close: vi.fn()
+      },
+      focus: vi.fn(),
+      print
+    });
+    vi.stubGlobal('open', openMock);
+    const fetchMock = vi.fn((url: string | URL | Request) => {
+      const requestUrl = getRequestUrl(url);
+
+      if (requestUrl.pathname.endsWith('/progress')) {
+        return createJsonResponse(initialProgress);
+      }
+
+      if (requestUrl.pathname.endsWith('/missing')) {
+        return createJsonResponse({
+          items: [],
+          limit: 100,
+          offset: 0
+        });
+      }
+
+      return createJsonResponse({
+        items: [{ ...sticker, quantityTotal: 4, duplicateCount: 3 }],
+        limit: 100,
+        offset: Number(requestUrl.searchParams.get('offset'))
+      });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(
+      <CollectionDashboard
+        albumId="album-id"
+        initialProgress={initialProgress}
+        sections={[section]}
+        token="access-token"
+        onUnauthorized={vi.fn()}
+      />
+    );
+
+    fireEvent.change(screen.getAllByLabelText('Seção')[1], {
+      target: { value: 'section-id' }
+    });
+    fireEvent.click(screen.getByLabelText('Repetidas'));
+    fireEvent.click(screen.getByRole('button', { name: 'Imprimir PDF' }));
+
+    await waitFor(() => expect(print).toHaveBeenCalledTimes(1));
+
+    const html = write.mock.calls[0][0] as string;
+    expect(openMock).toHaveBeenCalledWith('', '_blank');
+    expect(html).toContain('Lista de figurinhas repetidas');
+    expect(html).toContain('<td>BRA01</td>');
+    expect(html).not.toContain('duplicateCount');
+    expect(html).not.toContain('disponíveis');
   });
 });

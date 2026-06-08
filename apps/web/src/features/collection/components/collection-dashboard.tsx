@@ -342,12 +342,15 @@ export function CollectionDashboard({
             }
           />
           <CollectionSummaryLists
+            albumId={albumId}
             duplicates={duplicates}
             missing={missing}
             sections={sections}
             selectedSectionId={summarySectionId}
             status={summaryStatus}
+            token={token}
             onChangeSection={handleChangeSummarySection}
+            onUnauthorized={onUnauthorized}
           />
         </>
       ) : null}
