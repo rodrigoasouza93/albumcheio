@@ -30,7 +30,6 @@ export type ShareListKind = 'missing' | 'duplicates';
 
 export interface ShareListItem {
   readonly code: string;
-  readonly title: string;
   readonly sectionName: string;
 }
 ```
@@ -49,7 +48,6 @@ export interface ShareListExport {
   readonly kind: ShareListKind;
   readonly sectionName: string;
   readonly items: readonly ShareListItem[];
-  readonly generatedAt: string;
 }
 ```
 
@@ -67,13 +65,13 @@ export interface StickerShareExportPanelProps {
 
 Não há mudança obrigatória no banco de dados. As entidades existentes continuam sendo:
 
-- `stickers`: fonte de `code`, `title`, `section_id` e ordenação.
+- `stickers`: fonte de `code`, `section_id` e ordenação.
 - `album_sections`: fonte de nome da seção selecionada e nomes de seção para itens exportados.
 - `collection_items`: fonte de quantidade do usuário para classificar faltantes e repetidas.
 
-No frontend, `ShareListItem` deve derivar `title` de `sticker.title ?? 'Figurinha sem título'` e `sectionName` do mapa de seções carregado em `AlbumDetailPage`. A quantidade repetida não entra no conteúdo exportado, mesmo quando disponível na resposta de duplicadas.
+No frontend, `ShareListItem` deve derivar `sectionName` do mapa de seções carregado em `AlbumDetailPage`. O título da figurinha, horário de geração e a quantidade repetida não entram no conteúdo exportado, mesmo quando disponíveis nas respostas.
 
-A busca completa deve usar um limite fixo compatível com o padrão atual (`100`) e avançar `offset` até receber uma página com menos itens que o limite. A ordenação final deve ser estável, preferindo a ordem retornada pela API; se houver normalização local, ordenar por `sectionName`, `code` e `title`.
+A busca completa deve usar um limite fixo compatível com o padrão atual (`100`) e avançar `offset` até receber uma página com menos itens que o limite. A ordenação final deve ser estável, preferindo a ordem retornada pela API; se houver normalização local, ordenar por `sectionName` e `code`.
 
 ### Endpoints da API
 
@@ -113,7 +111,7 @@ Essas APIs devem ser tratadas como capacidades opcionais do ambiente. Se a cópi
 
 Usar Playwright para validar frontend com backend:
 
-- Usuário seleciona uma seção, escolhe faltantes, copia a lista e o texto contém código, nome e seção.
+- Usuário seleciona uma seção, escolhe faltantes, copia a lista e o texto contém apenas código e seção.
 - Usuário seleciona repetidas e confirma que a lista não contém faltantes.
 - Usuário exporta "Todas as seções" somente após seleção explícita.
 - Fluxo mobile: controles cabem na tela, copiar funciona ou apresenta fallback selecionável.

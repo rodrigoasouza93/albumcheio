@@ -181,7 +181,6 @@ export type ShareListKind = 'missing' | 'duplicates';
 
 export interface ShareListItem {
   readonly code: string;
-  readonly title: string;
   readonly sectionName: string;
 }
 
@@ -197,5 +196,4 @@ export interface ShareListExport {
   readonly kind: ShareListKind;
   readonly sectionName: string;
   readonly items: readonly ShareListItem[];
-  readonly generatedAt: string;
 }

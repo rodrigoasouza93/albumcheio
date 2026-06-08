@@ -114,13 +114,11 @@ describe('collection share export', () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(shareList).toMatchObject({
       kind: 'missing',
-      sectionName: 'Todas as seções',
-      generatedAt: timestamp
+      sectionName: 'Todas as seções'
     });
     expect(shareList.items).toHaveLength(101);
     expect(shareList.items[100]).toEqual({
       code: 'ARG01',
-      title: 'Figurinha sem título',
       sectionName: 'Argentina'
     });
   });
@@ -129,18 +127,17 @@ describe('collection share export', () => {
     const text = formatShareListText({
       kind: 'duplicates',
       sectionName: 'Brazil',
-      generatedAt: timestamp,
       items: [
         {
           code: 'BRA01',
-          title: 'Badge',
           sectionName: 'Brazil'
         }
       ]
     });
 
     expect(text).toContain('Lista de figurinhas repetidas');
-    expect(text).toContain('BRA01 - Badge - Brazil');
+    expect(text).toContain('BRA01 - Brazil');
+    expect(text).not.toContain('Badge');
     expect(text).not.toContain('duplicateCount');
     expect(text).not.toContain('disponíveis');
     expect(text).not.toContain('user');
@@ -151,18 +148,19 @@ describe('collection share export', () => {
     const html = buildPrintableShareListHtml({
       kind: 'missing',
       sectionName: 'Brazil',
-      generatedAt: timestamp,
       items: [
         {
           code: 'BRA<01>',
-          title: 'Badge & Captain',
           sectionName: 'Brazil'
         }
       ]
     });
 
     expect(html).toContain('BRA&lt;01&gt;');
-    expect(html).toContain('Badge &amp; Captain');
+    expect(html).toContain('<th>Código</th>');
+    expect(html).toContain('<th>Seção</th>');
+    expect(html).not.toContain('<th>Nome</th>');
+    expect(html).not.toContain('Badge &amp; Captain');
     expect(html).not.toContain('BRA<01>');
   });
 });

@@ -18,8 +18,9 @@ Implementar o formato complementar de exportação para PDF usando impressão na
 
 - A exportação em PDF deve usar impressão nativa do navegador, sem biblioteca nova.
 - A visualização imprimível deve usar a mesma lista completa carregada para exportação.
-- O conteúdo imprimível deve conter nome, seção e código das figurinhas.
+- O conteúdo imprimível deve conter apenas código e seção das figurinhas.
 - O conteúdo imprimível não deve conter dados pessoais nem quantidade de repetidas.
+- O conteúdo imprimível não deve adicionar horário de geração.
 - O fluxo deve funcionar em navegador web e navegador mobile.
 - A validação final deve cobrir texto copiável, impressão/PDF, privacidade e lista completa.
 
@@ -48,7 +49,9 @@ Referenciar `tasks/prd-compartilhamento-listas-figurinhas/techspec.md`, especial
 ## Notas de implementação
 
 - A exportação para PDF usa impressão nativa via `window.open`, documento HTML simples e `print()`, sem dependência nova.
-- A visualização imprimível reutiliza a mesma lista completa carregada para exportação e inclui apenas código, nome e seção.
+- A visualização imprimível reutiliza a mesma lista completa carregada para exportação e inclui apenas código e seção.
+- O contrato de exportação deixou de carregar horário de geração e título da figurinha para evitar conteúdo extra no texto copiável e no PDF.
+- O CSS de impressão usa `@page { margin: 0; }` com margem no `body` para reduzir cabeçalho/rodapé nativo do navegador, como URL `about:blank`, data/hora e numeração automática.
 - O fluxo cobre lista vazia, erro de abertura da impressão e fallback manual para texto copiável.
 
 ## Testes da tarefa
@@ -63,6 +66,8 @@ Verificação executada:
 - `npm run test`
 - `pnpm --filter @albumcheio/web build`
 - `curl -I http://localhost:3000`
+- `npm run test -- src/features/collection/lib/collection-share-export.test.ts src/features/collection/components/collection-dashboard.test.tsx`
+- `npm run build`
 
 Observação: validação automatizada E2E com Playwright não foi adicionada nesta entrega; a cobertura ficou em testes unitários e de integração do frontend.
 

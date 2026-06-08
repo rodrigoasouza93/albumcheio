@@ -13,7 +13,6 @@ import {
 } from '@web/lib/api/http-client';
 
 const SHARE_LIST_PAGE_LIMIT = 100;
-const UNTITLED_STICKER = 'Figurinha sem título';
 const UNASSIGNED_SECTION = 'Seção não atribuída';
 const ALL_SECTIONS = 'Todas as seções';
 
@@ -48,7 +47,6 @@ const toShareListItem =
   (sectionNames: ReadonlyMap<string, string>) =>
   (sticker: ShareListSticker): ShareListItem => ({
     code: sticker.code,
-    title: sticker.title ?? UNTITLED_STICKER,
     sectionName: sectionNames.get(sticker.sectionId) ?? UNASSIGNED_SECTION
   });
 
@@ -138,8 +136,7 @@ export const loadCompleteShareList = async (
   return {
     kind: input.kind,
     sectionName: getSectionName(input.sectionId, input.sections),
-    items: stickers.map(toShareListItem(sectionNames)),
-    generatedAt: new Date().toISOString()
+    items: stickers.map(toShareListItem(sectionNames))
   };
 };
 
@@ -150,7 +147,7 @@ export const formatShareListText = (shareList: ShareListExport): string => {
     `Total: ${shareList.items.length}`
   ];
   const itemLines = shareList.items.map(
-    (item) => `${item.code} - ${item.title} - ${item.sectionName}`
+    (item) => `${item.code} - ${item.sectionName}`
   );
 
   return [...header, '', ...itemLines].join('\n').trim();
@@ -171,7 +168,6 @@ export const buildPrintableShareListHtml = (
     .map(
       (item) => `<tr>
         <td>${escapeHtml(item.code)}</td>
-        <td>${escapeHtml(item.title)}</td>
         <td>${escapeHtml(item.sectionName)}</td>
       </tr>`
     )
@@ -184,13 +180,14 @@ export const buildPrintableShareListHtml = (
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Lista de figurinhas ${escapeHtml(getKindLabel(shareList.kind).toLowerCase())}</title>
     <style>
-      body { color: #111827; font-family: Arial, sans-serif; margin: 32px; }
+      @page { margin: 0; }
+      body { color: #111827; font-family: Arial, sans-serif; margin: 14mm; }
       h1 { font-size: 24px; margin: 0 0 8px; }
       p { margin: 0 0 20px; }
       table { border-collapse: collapse; width: 100%; }
       th, td { border-bottom: 1px solid #d1d5db; padding: 8px; text-align: left; }
       th { font-size: 12px; text-transform: uppercase; }
-      @media print { body { margin: 18mm; } button { display: none; } }
+      @media print { button { display: none; } }
     </style>
   </head>
   <body>
@@ -200,7 +197,6 @@ export const buildPrintableShareListHtml = (
       <thead>
         <tr>
           <th>Código</th>
-          <th>Nome</th>
           <th>Seção</th>
         </tr>
       </thead>
