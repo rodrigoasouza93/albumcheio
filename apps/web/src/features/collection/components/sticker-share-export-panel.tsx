@@ -156,7 +156,7 @@ export function StickerShareExportPanel({
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <fieldset className="flex flex-col gap-2">
           <legend className="text-sm font-semibold">Exportar lista</legend>
-          <div className="grid grid-cols-2 overflow-hidden rounded-lg border border-line bg-paper p-1 text-sm font-semibold">
+          <div className="grid grid-cols-2 gap-1 rounded-lg border border-line bg-paper p-1 text-sm font-semibold">
             <label className="min-h-11 cursor-pointer">
               <input
                 className="peer sr-only"
@@ -166,7 +166,7 @@ export function StickerShareExportPanel({
                 checked={kind === 'missing'}
                 onChange={() => setKind('missing')}
               />
-              <span className="flex h-full items-center justify-center rounded-md px-3 py-2 text-slate-700 transition peer-checked:bg-white peer-checked:text-ink peer-focus-visible:ring-2 peer-focus-visible:ring-ocean/30">
+              <span className="flex h-full items-center justify-center rounded-md border border-transparent px-3 py-2 text-slate-600 transition peer-checked:border-dark peer-checked:bg-dark peer-checked:text-white peer-checked:shadow-sm peer-hover:bg-white peer-focus-visible:ring-2 peer-focus-visible:ring-ocean/30">
                 Faltantes
               </span>
             </label>
@@ -179,7 +179,7 @@ export function StickerShareExportPanel({
                 checked={kind === 'duplicates'}
                 onChange={() => setKind('duplicates')}
               />
-              <span className="flex h-full items-center justify-center rounded-md px-3 py-2 text-slate-700 transition peer-checked:bg-white peer-checked:text-ink peer-focus-visible:ring-2 peer-focus-visible:ring-ocean/30">
+              <span className="flex h-full items-center justify-center rounded-md border border-transparent px-3 py-2 text-slate-600 transition peer-checked:border-dark peer-checked:bg-dark peer-checked:text-white peer-checked:shadow-sm peer-hover:bg-white peer-focus-visible:ring-2 peer-focus-visible:ring-ocean/30">
                 Repetidas
               </span>
             </label>

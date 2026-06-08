@@ -52,6 +52,7 @@ Referenciar `tasks/prd-compartilhamento-listas-figurinhas/techspec.md`, especial
 - A visualização imprimível reutiliza a mesma lista completa carregada para exportação e inclui apenas código e seção.
 - O contrato de exportação deixou de carregar horário de geração e título da figurinha para evitar conteúdo extra no texto copiável e no PDF.
 - O CSS de impressão usa `@page { margin: 0; }` com margem no `body` para reduzir cabeçalho/rodapé nativo do navegador, como URL `about:blank`, data/hora e numeração automática.
+- O seletor de tipo da exportação usa estado ativo de alto contraste para diferenciar claramente "Faltantes" e "Repetidas".
 - O fluxo cobre lista vazia, erro de abertura da impressão e fallback manual para texto copiável.
 
 ## Testes da tarefa
@@ -68,6 +69,7 @@ Verificação executada:
 - `curl -I http://localhost:3000`
 - `npm run test -- src/features/collection/lib/collection-share-export.test.ts src/features/collection/components/collection-dashboard.test.tsx`
 - `npm run build`
+- `npm run test -- src/features/collection/components/collection-dashboard.test.tsx`
 
 Observação: validação automatizada E2E com Playwright não foi adicionada nesta entrega; a cobertura ficou em testes unitários e de integração do frontend.
 
