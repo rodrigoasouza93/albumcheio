@@ -543,7 +543,8 @@ describe('CollectionDashboard', () => {
     const copiedText = writeText.mock.calls[0][0] as string;
     expect(missingOffsets).toEqual([0, 0, 100]);
     expect(copiedText).toContain('Lista de figurinhas faltantes');
-    expect(copiedText).toContain('BRA999 - Goalkeeper - Brazil');
+    expect(copiedText).toContain('BRA999 - Brazil');
+    expect(copiedText).not.toContain('Goalkeeper');
     expect(copiedText).not.toContain('disponíveis');
     expect(copiedText).not.toContain('email');
   });
@@ -598,8 +599,9 @@ describe('CollectionDashboard', () => {
 
     const manualText = screen.getByLabelText('Texto para cópia manual');
     expect((manualText as HTMLTextAreaElement).value).toContain(
-      'BRA01 - Badge - Brazil'
+      'BRA01 - Brazil'
     );
+    expect((manualText as HTMLTextAreaElement).value).not.toContain('Badge');
     expect((manualText as HTMLTextAreaElement).value).not.toContain(
       '2 disponíveis'
     );
@@ -663,6 +665,9 @@ describe('CollectionDashboard', () => {
     expect(openMock).toHaveBeenCalledWith('', '_blank');
     expect(html).toContain('Lista de figurinhas repetidas');
     expect(html).toContain('<td>BRA01</td>');
+    expect(html).toContain('<th>Seção</th>');
+    expect(html).not.toContain('<th>Nome</th>');
+    expect(html).not.toContain('Badge');
     expect(html).not.toContain('duplicateCount');
     expect(html).not.toContain('disponíveis');
   });
